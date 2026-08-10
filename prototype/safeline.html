@@ -339,6 +339,89 @@
     padding:13px 16px; font-family:'Zen Maru Gothic',sans-serif; font-weight:600; font-size:13.5px;
     width:100%; cursor:pointer;
   }
+
+  /* ---------- Check-in contacts ---------- */
+  .contact-item{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(255,255,255,0.05); border-radius:10px; padding:10px; margin-bottom:8px;
+  }
+  .contact-item .name{font-size:13.5px; font-weight:600;}
+  .contact-item .phone{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-dim);}
+  .contact-item button{background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer;}
+  .contacts-empty{font-size:12.5px; color:var(--text-dim);}
+
+  /* ---------- Settings: grouped Form/Section look (mirrors SwiftUI Form) ---------- */
+  .settings-group{margin-bottom:22px;}
+  .settings-group .group-header{
+    font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.04em;
+    margin:0 0 6px 4px;
+  }
+  .settings-group .group-footer{
+    font-size:11.5px; color:var(--text-dim); line-height:1.6; margin:6px 4px 0;
+  }
+  .group-list{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  }
+  .group-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:13px 14px; border-bottom:1px solid var(--line);
+    background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; color:var(--text); cursor:pointer;
+    font-family:'Zen Maru Gothic',sans-serif; font-size:14px;
+  }
+  .group-row:last-child{border-bottom:none;}
+  .group-row .row-value{color:var(--text-dim); font-size:13px; display:flex; align-items:center; gap:6px;}
+  .group-row .chevron{color:var(--text-dim); font-size:13px;}
+  .group-row.destructive{color:var(--coral); font-weight:600; cursor:pointer;}
+
+  .toggle{
+    position:relative; width:44px; height:26px; border-radius:99px;
+    background:rgba(255,255,255,0.15); border:none; cursor:pointer; flex-shrink:0;
+    transition:background .15s;
+  }
+  .toggle::after{
+    content:''; position:absolute; top:2px; left:2px; width:22px; height:22px;
+    border-radius:50%; background:#fff; transition:transform .15s;
+  }
+  .toggle.on{background:var(--teal);}
+  .toggle.on::after{transform:translateX(18px);}
+
+  .stepper{display:flex; align-items:center; gap:10px;}
+  .stepper button{
+    width:26px; height:26px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(255,255,255,0.05); color:var(--text); font-size:15px; cursor:pointer;
+  }
+
+  /* ---------- Journal: photo attach + hash footer ---------- */
+  .photo-row{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .photo-row label.attach-btn{
+    color:var(--teal); font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .photo-thumb{width:36px; height:36px; border-radius:8px; object-fit:cover;}
+  .journal-footer{
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--text-dim);
+    margin-top:4px; display:flex; align-items:center; gap:4px;
+  }
+  .journal-footer.mismatch{color:var(--coral);}
+
+  /* ---------- Onboarding ---------- */
+  .onboarding{
+    position:fixed; inset:0; z-index:50; background:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .onboarding.hidden{display:none;}
+  .ob-page{display:none; flex-direction:column; align-items:center; text-align:center; padding:0 32px; max-width:430px;}
+  .ob-page.active{display:flex;}
+  .ob-icon{
+    width:88px; height:88px; border-radius:50%; background:rgba(255,255,255,0.05);
+    display:flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:20px;
+  }
+  .ob-title{font-size:19px; font-weight:700; margin-bottom:10px;}
+  .ob-body{font-size:13.5px; color:var(--text-dim); line-height:1.7;}
+  .ob-dots{display:flex; gap:6px; margin:28px 0 20px;}
+  .ob-dots span{width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.2);}
+  .ob-dots span.active{background:var(--teal); width:16px; border-radius:4px; transition:all .2s;}
+  .ob-actions{width:100%; max-width:380px; padding:0 24px;}
 </style>
 </head>
 <body>
@@ -408,8 +491,13 @@
     </div>
 
     <div class="field">
-      <label>知らせたい人（電話番号）</label>
-      <input type="tel" id="contactInput" placeholder="例：090-1234-5678">
+      <label>知らせたい人</label>
+      <div id="contactsList" style="margin-bottom:10px;"></div>
+      <div id="contactAddRow" style="display:flex; gap:8px;">
+        <input type="text" id="newContactName" placeholder="名前" style="flex:1;">
+        <input type="tel" id="newContactPhone" placeholder="電話番号" style="flex:1.2;">
+        <button class="btn btn-primary" style="padding:0 16px;" onclick="addContact()">＋</button>
+      </div>
     </div>
     <div class="field">
       <label>伝えたいメッセージ（現在地もそっと添えられます）</label>
@@ -467,7 +555,12 @@
     </div>
 
     <div id="journalContent" style="display:none;">
-      <h1 class="hero">記録（あなたの端末だけに）</h1>
+      <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+        <h1 class="hero" style="margin-bottom:4px;">記録（あなたの端末だけに）</h1>
+        <button id="exportBtn" onclick="exportJournal()"
+                style="display:none; background:none; border:none; color:var(--teal); font-size:18px; cursor:pointer; padding:6px;"
+                title="書き出す">⇧</button>
+      </div>
       <p class="hero-sub">気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末にだけ保存され、クラウドには送りません。誰にも見せなくて大丈夫です。あなたのための記録です。</p>
 
       <div class="field">
@@ -478,6 +571,16 @@
         <label>メモ</label>
         <textarea id="journalText" placeholder="場所、状況、相手との関係など、思い出せる範囲で。"></textarea>
       </div>
+
+      <div class="photo-row">
+        <label class="attach-btn">
+          📷 <span id="photoAttachLabel">写真を添付</span>
+          <input type="file" id="journalPhotoInput" accept="image/*" style="display:none;" onchange="onPhotoSelected(event)">
+        </label>
+        <img id="photoPreview" class="photo-thumb" style="display:none;">
+        <button id="photoRemoveBtn" style="display:none; background:none; border:none; color:var(--text-dim); cursor:pointer;" onclick="removePhoto()">✕</button>
+      </div>
+
       <button class="btn btn-primary" style="width:100%; padding:13px 0;" onclick="addJournal()">そっと保存する</button>
 
       <div style="margin-top:24px;" id="journalList"></div>
@@ -489,51 +592,90 @@
     <h1 class="hero">設定</h1>
     <p class="hero-sub">アカウント登録はしていません。データはこの端末にのみ暗号化して保存され、サーバーには何も送信されません。</p>
 
-    <div class="settings-section">
-      <h2>ホーム画面のアイコン</h2>
-      <p class="hint">ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。偽装ではなく、見た目のバリエーションです。</p>
-      <div class="icon-picker" id="iconPicker">
-        <div class="icon-choice selected" data-icon="default" onclick="selectIcon('default', this)">
-          <div class="icon-swatch icon-default">◆</div>
-          <span class="label">デフォルト</span>
-        </div>
-        <div class="icon-choice" data-icon="pastel" onclick="selectIcon('pastel', this)">
-          <div class="icon-swatch icon-pastel">◆</div>
-          <span class="label">パステル</span>
-        </div>
-        <div class="icon-choice" data-icon="mono" onclick="selectIcon('mono', this)">
-          <div class="icon-swatch icon-mono">◆</div>
-          <span class="label">モノクロ</span>
-        </div>
-        <div class="icon-choice" data-icon="minimal" onclick="selectIcon('minimal', this)">
-          <div class="icon-swatch icon-minimal">◆</div>
-          <span class="label">シンプル</span>
-        </div>
-      </div>
-
-      <p class="hint" style="margin-bottom:8px;">プレビュー：他アプリの中に紛れさせた見え方</p>
-      <div class="home-preview" id="homePreview"></div>
-    </div>
-
-    <div class="settings-section">
-      <h2>見守り中の位置情報 更新間隔</h2>
-      <p class="hint">短くするほど「今すぐ知らせる」を押したときの位置が新しくなりますが、バッテリー消費が増えます。</p>
-      <div class="segmented" id="intervalPicker">
-        <div class="seg" data-sec="30" onclick="selectInterval(30,this)">30秒</div>
-        <div class="seg" data-sec="60" onclick="selectInterval(60,this)">1分</div>
-        <div class="seg active" data-sec="120" onclick="selectInterval(120,this)">2分</div>
-        <div class="seg" data-sec="300" onclick="selectInterval(300,this)">5分</div>
-        <div class="seg" data-sec="600" onclick="selectInterval(600,this)">10分</div>
+    <div class="settings-group">
+      <div class="group-header">ホーム画面</div>
+      <div class="group-list">
+        <button class="group-row" onclick="go('settings-icon')">
+          <span>アイコン</span>
+          <span class="row-value" id="iconRowValue">デフォルト <span class="chevron">›</span></span>
+        </button>
       </div>
     </div>
 
-    <div class="settings-section">
-      <h2>データの削除</h2>
-      <p class="hint">記録（ジャーナル）と見守り連絡先をこの端末から削除します。加害者などに端末を確認された場合の安全確保のため、確認は1段階のみです。</p>
-      <button class="danger-btn" onclick="eraseAllData()">この端末からすべてのデータを削除</button>
+    <div class="settings-group">
+      <div class="group-header">見守り</div>
+      <div class="group-list">
+        <div class="group-row" style="cursor:default;">
+          <span>毎日の見守りリマインダー</span>
+          <button class="toggle" id="dailyReminderToggle" onclick="toggleDailyReminder()"></button>
+        </div>
+        <div id="dailyReminderDetail" style="display:none;">
+          <div class="group-row" style="cursor:default;">
+            <span>時刻</span>
+            <input type="time" id="dailyReminderTime" value="21:00"
+                   style="background:none; border:none; color:var(--teal); font-family:'IBM Plex Mono',monospace; font-size:14px;">
+          </div>
+          <div class="group-row" style="cursor:default;">
+            <span>目安の見守り時間</span>
+            <div class="stepper">
+              <button onclick="adjustReminderDuration(-15)">−</button>
+              <span class="row-value" id="reminderDurationLabel">30分</span>
+              <button onclick="adjustReminderDuration(15)">＋</button>
+            </div>
+          </div>
+        </div>
+        <div class="group-row" style="cursor:default;">
+          <span>位置情報の更新間隔</span>
+          <select id="intervalSelect" onchange="selectInterval(this.value)"
+                  style="background:none; border:none; color:var(--teal); font-family:'IBM Plex Mono',monospace; font-size:13px;">
+            <option value="30">30秒</option>
+            <option value="60">1分</option>
+            <option value="120" selected>2分</option>
+            <option value="300">5分</option>
+            <option value="600">10分</option>
+          </select>
+        </div>
+      </div>
+      <div class="group-footer">リマインダーはタイマーを自動で開始せず、見守り画面を開くだけです。位置情報の更新間隔は、短くするほど「今すぐ知らせる」時の位置が新しくなりますが、バッテリー消費が増えます。</div>
     </div>
 
-    <button class="btn-line" style="width:100%; margin-top:6px; padding:10px 0; border-radius:12px;" onclick="go('home')">戻る</button>
+    <div class="settings-group">
+      <div class="group-header">データ</div>
+      <div class="group-list">
+        <button class="group-row destructive" onclick="eraseAllData()">この端末のデータをすべて消す</button>
+      </div>
+      <div class="group-footer">記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。この操作は取り消せません。</div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS: ICON PICKER (sub-page) ================= -->
+  <div class="screen" id="screen-settings-icon">
+    <h1 class="hero" style="font-size:18px;">アイコン</h1>
+    <p class="hero-sub">ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。偽装ではなく、見た目のバリエーションです。</p>
+
+    <div class="icon-picker" id="iconPicker">
+      <div class="icon-choice selected" data-icon="default" onclick="selectIcon('default', this)">
+        <div class="icon-swatch icon-default">◆</div>
+        <span class="label">デフォルト</span>
+      </div>
+      <div class="icon-choice" data-icon="pastel" onclick="selectIcon('pastel', this)">
+        <div class="icon-swatch icon-pastel">◆</div>
+        <span class="label">パステル</span>
+      </div>
+      <div class="icon-choice" data-icon="mono" onclick="selectIcon('mono', this)">
+        <div class="icon-swatch icon-mono">◆</div>
+        <span class="label">モノクロ</span>
+      </div>
+      <div class="icon-choice" data-icon="minimal" onclick="selectIcon('minimal', this)">
+        <div class="icon-swatch icon-minimal">◆</div>
+        <span class="label">シンプル</span>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-bottom:8px;">プレビュー：他アプリの中に紛れさせた見え方</p>
+    <div class="home-preview" id="homePreview"></div>
+
+    <button class="btn-line" style="width:100%; margin-top:14px; padding:10px 0; border-radius:12px;" onclick="go('settings')">戻る</button>
   </div>
 
   <!-- ================= NAV ================= -->
@@ -562,6 +704,42 @@
 
   <div class="toast" id="toast">🚨 <span id="toastText">信頼できる人に知らせを送りました</span></div>
 
+</div>
+
+<!-- ================= ONBOARDING ================= -->
+<div class="onboarding hidden" id="onboarding">
+  <div class="ob-page active" data-page="0">
+    <div class="ob-icon">🤲</div>
+    <div class="ob-title">そっと、へようこそ</div>
+    <div class="ob-body">危ないと感じたとき、迷わず助けを呼べる場所を。あなたのための、静かな安全アプリです。</div>
+  </div>
+  <div class="ob-page" data-page="1">
+    <div class="ob-icon">●</div>
+    <div class="ob-title">長押しでSOS</div>
+    <div class="ob-body">ホーム画面のボタンを1.5秒長押しすると、発信の準備が整います。チェックインをセットしていなくても、いつでも押せます。</div>
+  </div>
+  <div class="ob-page" data-page="2">
+    <div class="ob-icon">⏱️</div>
+    <div class="ob-title">見守りチェックイン</div>
+    <div class="ob-body">出かける前にセットしておくと、時間になっても「無事です」を押さなければ、選んだ人にそっと知らせが届きます。</div>
+  </div>
+  <div class="ob-page" data-page="3">
+    <div class="ob-icon">📝</div>
+    <div class="ob-title">記録はあなたのために</div>
+    <div class="ob-body">気になったことを、この端末にだけ暗号化して残せます。Face IDで守られていて、誰にも見せなくて大丈夫です。</div>
+  </div>
+  <div class="ob-page" data-page="4">
+    <div class="ob-icon">🔐</div>
+    <div class="ob-title">アカウント登録は不要です</div>
+    <div class="ob-body">氏名もメールアドレスも聞きません。データはこの端末にのみ保存され、サーバーには送信されません。</div>
+  </div>
+
+  <div class="ob-dots" id="obDots"></div>
+  <div class="ob-actions">
+    <button class="btn btn-primary" style="width:100%; padding:14px 0;" id="obNextBtn" onclick="obNext()">次へ</button>
+    <button id="obSkipBtn" onclick="finishOnboarding()"
+            style="width:100%; margin-top:14px; background:none; border:none; color:var(--text-dim); font-family:'Zen Maru Gothic',sans-serif; font-size:12.5px; cursor:pointer;">スキップ</button>
+  </div>
 </div>
 
 <script>
@@ -623,6 +801,43 @@ function showToast(text){
   showToast._to=setTimeout(()=>t.classList.remove('show'), 3600);
 }
 
+// ---------- Check-in contacts (multiple, mirrors EmergencyContact.swift) ----------
+let contacts = [];
+
+function renderContacts(){
+  const list = document.getElementById('contactsList');
+  if(contacts.length === 0){
+    list.innerHTML = `<div class="contacts-empty">まだ誰も登録されていません。下から追加してください。</div>`;
+    return;
+  }
+  list.innerHTML = contacts.map(c => `
+    <div class="contact-item">
+      <div>
+        <div class="name">${c.name}</div>
+        <div class="phone">${c.phone}</div>
+      </div>
+      ${checkinActive ? '' : `<button onclick="removeContact('${c.id}')">✕</button>`}
+    </div>
+  `).join('');
+}
+
+function addContact(){
+  const nameInput = document.getElementById('newContactName');
+  const phoneInput = document.getElementById('newContactPhone');
+  const phone = phoneInput.value.trim();
+  if(!phone) return;
+  const name = nameInput.value.trim() || '連絡先';
+  contacts.push({ id: 'c' + Date.now(), name, phone });
+  nameInput.value = '';
+  phoneInput.value = '';
+  renderContacts();
+}
+
+function removeContact(id){
+  contacts = contacts.filter(c => c.id !== id);
+  renderContacts();
+}
+
 // ---------- Check-in timer ----------
 let checkinMinutes = 30;
 let checkinInterval = null;
@@ -649,9 +864,8 @@ function toggleCheckin(){
   const caption = document.getElementById('timerCaption');
 
   if(!checkinActive){
-    const contact = document.getElementById('contactInput').value.trim();
-    if(!contact){
-      showToast('知らせたい人の電話番号を入力してください');
+    if(contacts.length === 0){
+      showToast('知らせたい人を1人以上追加してください');
       return;
     }
     checkinActive = true;
@@ -663,6 +877,8 @@ function toggleCheckin(){
     pill.textContent = '見守り: ON';
     caption.textContent = `${checkinMinutes}分以内に「無事です」を教えてください`;
     document.getElementById('sendNowBtn').style.display = 'block';
+    document.getElementById('contactAddRow').style.display = 'none';
+    renderContacts();
     startLocationTracking();
 
     checkinInterval = setInterval(()=>{
@@ -670,7 +886,7 @@ function toggleCheckin(){
       updateTimerDisplay(remain/1000);
       if(remain<=0){
         clearInterval(checkinInterval);
-        sendCheckinAlert(contact, true);
+        sendCheckinAlert(true);
       }
     }, 500);
   } else {
@@ -683,7 +899,9 @@ function toggleCheckin(){
     pill.textContent = '見守り: オフ';
     caption.textContent = '無事の知らせを受け取りました';
     document.getElementById('sendNowBtn').style.display = 'none';
+    document.getElementById('contactAddRow').style.display = 'flex';
     document.getElementById('locationStatus').textContent = '';
+    renderContacts();
     updateTimerDisplay(checkinMinutes*60);
     stopLocationTracking();
     showToast('見守り、終わりました。今日もお疲れさま。');
@@ -691,18 +909,18 @@ function toggleCheckin(){
 }
 
 function sendCheckinAlertNow(){
-  const contact = document.getElementById('contactInput').value.trim();
-  if(!contact){ showToast('知らせたい人の電話番号を入力してください'); return; }
-  sendCheckinAlert(contact, false);
+  if(contacts.length === 0){ showToast('知らせたい人を1人以上追加してください'); return; }
+  sendCheckinAlert(false);
 }
 
-function sendCheckinAlert(contact, timedOut){
+function sendCheckinAlert(timedOut){
   const msg = document.getElementById('contactMsg').value || '時間までに連絡が取れませんでした。確認してください。';
   showToast(timedOut ? '時間になりました。知らせを送ります。' : '知らせを送ります。');
   const locationText = lastLocation
     ? `\n現在地: https://maps.google.com/?q=${lastLocation.lat},${lastLocation.lng}`
     : '（現在地の共有はお使いの地図アプリからお願いします）';
-  const smsUrl = `sms:${contact}?&body=${encodeURIComponent(msg + locationText)}`;
+  const recipients = contacts.map(c => c.phone).join(',');
+  const smsUrl = `sms:${recipients}?&body=${encodeURIComponent(msg + locationText)}`;
   setTimeout(()=>{ window.location.href = smsUrl; }, 800);
 }
 
@@ -752,19 +970,81 @@ function updateLocationStatus(){
   el.textContent = `現在地を ${hh}:${mm} に更新（送信時に自動で添付されます）`;
 }
 
-function selectInterval(sec, el){
-  locationIntervalSec = sec;
-  document.querySelectorAll('#intervalPicker .seg').forEach(s=>s.classList.remove('active'));
-  el.classList.add('active');
+function selectInterval(secStr){
+  locationIntervalSec = parseInt(secStr, 10);
   // If a check-in is already running, apply the new cadence immediately
   // rather than waiting for the next check-in.
   if(checkinActive) startLocationTracking();
 }
 
+// ---------- Daily check-in reminder (mirrors CheckInManager's
+// dailyReminderEnabled/.Time/.DurationMinutes) ----------
+let dailyReminderEnabled = false;
+let dailyReminderDuration = 30;
+
+function toggleDailyReminder(){
+  dailyReminderEnabled = !dailyReminderEnabled;
+  document.getElementById('dailyReminderToggle').classList.toggle('on', dailyReminderEnabled);
+  document.getElementById('dailyReminderDetail').style.display = dailyReminderEnabled ? 'block' : 'none';
+  if(dailyReminderEnabled){
+    // Real build: this is exactly the moment CheckInManager requests
+    // notification permission — only here, never at launch.
+    showToast('通知の許可をリクエストします（実機ではダイアログが出ます）');
+  }
+}
+
+function adjustReminderDuration(delta){
+  dailyReminderDuration = Math.min(240, Math.max(15, dailyReminderDuration + delta));
+  document.getElementById('reminderDurationLabel').textContent = `${dailyReminderDuration}分`;
+}
+
 // ---------- Journal (this-device only, in-memory for this demo) ----------
 let journalEntries = [];
+let selectedPhotoDataUrl = null;
+
+function onPhotoSelected(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedPhotoDataUrl = reader.result;
+    const preview = document.getElementById('photoPreview');
+    preview.src = selectedPhotoDataUrl;
+    preview.style.display = 'inline-block';
+    document.getElementById('photoRemoveBtn').style.display = 'inline-block';
+    document.getElementById('photoAttachLabel').textContent = '写真を変更';
+  };
+  reader.readAsDataURL(file);
+}
+function removePhoto(){
+  selectedPhotoDataUrl = null;
+  document.getElementById('journalPhotoInput').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoRemoveBtn').style.display = 'none';
+  document.getElementById('photoAttachLabel').textContent = '写真を添付';
+}
+
+// Real SHA-256 via the browser's Web Crypto API — mirrors
+// JournalStore.hash(text:photoData:) in the iOS build (text bytes, plus
+// photo bytes if attached). This is genuinely computed, not simulated, so
+// the "変更が検出されました" mismatch check below is a real check too.
+async function computeHash(text, photoDataUrl){
+  const encoder = new TextEncoder();
+  let bytes = encoder.encode(text);
+  if(photoDataUrl){
+    const photoBytes = Uint8Array.from(atob(photoDataUrl.split(',')[1]), c => c.charCodeAt(0));
+    const combined = new Uint8Array(bytes.length + photoBytes.length);
+    combined.set(bytes, 0);
+    combined.set(photoBytes, bytes.length);
+    bytes = combined;
+  }
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 function renderJournal(){
   const list = document.getElementById('journalList');
+  document.getElementById('exportBtn').style.display = journalEntries.length ? 'block' : 'none';
   if(journalEntries.length===0){
     list.innerHTML = `<div class="empty-state">まだ記録はありません。<br>思い出せるときに、少しずつで大丈夫です。</div>`;
     return;
@@ -773,21 +1053,53 @@ function renderJournal(){
     <div class="journal-entry">
       <div class="journal-date">${e.date}</div>
       <div class="journal-text">${e.text}</div>
+      ${e.photo ? `<img src="${e.photo}" class="photo-thumb" style="margin-top:6px;">` : ''}
+      <div class="journal-footer">🛡️ 作成 ${e.createdAtLabel} ・ ${e.hash.slice(0,12)}</div>
     </div>
   `).join('');
 }
-function addJournal(){
+
+async function addJournal(){
   const dateInput = document.getElementById('journalDate').value;
   const text = document.getElementById('journalText').value.trim();
   if(!text){ showToast('メモを入力してください'); return; }
   const date = dateInput ? new Date(dateInput).toLocaleString('ja-JP') : new Date().toLocaleString('ja-JP');
-  journalEntries.push({date, text});
+  const createdAt = new Date();
+  const hash = await computeHash(text, selectedPhotoDataUrl);
+  journalEntries.push({
+    date, text, hash,
+    photo: selectedPhotoDataUrl,
+    createdAtLabel: createdAt.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})
+  });
   document.getElementById('journalText').value='';
   document.getElementById('journalDate').value='';
+  removePhoto();
   renderJournal();
   showToast('そっと保存しました');
 }
+
+// Real build produces a PDF (JournalExporter.swift). A plain-text download
+// stands in for that here — this demo isn't the place to pull in a PDF
+// library just to prove the concept.
+function exportJournal(){
+  const lines = ['そっと — 記録のエクスポート（デモ版・簡易テキスト）', ''];
+  journalEntries.forEach(e => {
+    lines.push(e.date);
+    lines.push(e.text);
+    lines.push(`作成: ${e.createdAtLabel}   SHA-256: ${e.hash}`);
+    lines.push('');
+  });
+  const blob = new Blob([lines.join('\n')], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sotto-records.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 renderJournal();
+renderContacts();
 updateTimerDisplay(30*60);
 
 // ---------- Journal lock (Face ID / passcode stand-in) ----------
@@ -824,12 +1136,14 @@ const dummyApps = [
   {bg:'#9B7EDE', label:'音楽'}, {bg:'#4FB6C9', label:'地図'},
   {bg:'#D9A441', label:'設定'}
 ];
+const iconLabels = { default: 'デフォルト', pastel: 'パステル', mono: 'モノクロ', minimal: 'シンプル' };
 let selectedIcon = 'default';
 
 function selectIcon(name, el){
   selectedIcon = name;
   document.querySelectorAll('#iconPicker .icon-choice').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
+  document.getElementById('iconRowValue').innerHTML = `${iconLabels[name]} <span class="chevron">›</span>`;
   renderHomePreview();
 }
 
@@ -850,14 +1164,60 @@ renderHomePreview();
 
 // ---------- Data erase ----------
 function eraseAllData(){
-  if(!confirm('この端末からすべてのデータを削除しますか？この操作は取り消せません。')) return;
+  if(!confirm('この端末のデータをすべて消しますか？この操作は取り消せません。')) return;
   journalEntries = [];
+  removePhoto();
   renderJournal();
-  document.getElementById('contactInput').value = '';
+  contacts = [];
+  renderContacts();
   document.getElementById('contactMsg').value = '◯◯からの帰り道。時間までに連絡がなければ確認して。';
   if(checkinActive) toggleCheckin();
   lockJournal();
   showToast('この端末のデータを消しました');
+}
+
+// ---------- Onboarding (5-page first-launch walkthrough, mirrors OnboardingView.swift) ----------
+const OB_PAGE_COUNT = 5;
+let obPage = 0;
+
+function renderObDots(){
+  const dots = document.getElementById('obDots');
+  dots.innerHTML = '';
+  for(let i = 0; i < OB_PAGE_COUNT; i++){
+    const span = document.createElement('span');
+    if(i === obPage) span.className = 'active';
+    dots.appendChild(span);
+  }
+}
+
+function showObPage(index){
+  obPage = index;
+  document.querySelectorAll('.ob-page').forEach(p => {
+    p.classList.toggle('active', parseInt(p.dataset.page, 10) === obPage);
+  });
+  document.getElementById('obNextBtn').textContent = obPage < OB_PAGE_COUNT - 1 ? '次へ' : 'はじめる';
+  document.getElementById('obSkipBtn').style.display = obPage < OB_PAGE_COUNT - 1 ? 'block' : 'none';
+  renderObDots();
+}
+
+function obNext(){
+  if(obPage < OB_PAGE_COUNT - 1){
+    showObPage(obPage + 1);
+  } else {
+    finishOnboarding();
+  }
+}
+
+function finishOnboarding(){
+  localStorage.setItem('sotto_onboarding_done', '1');
+  document.getElementById('onboarding').classList.add('hidden');
+}
+
+if(!localStorage.getItem('sotto_onboarding_done')){
+  document.getElementById('onboarding').classList.remove('hidden');
+  showObPage(0);
+} else {
+  document.getElementById('onboarding').classList.add('hidden');
 }
 </script>
 </body>
