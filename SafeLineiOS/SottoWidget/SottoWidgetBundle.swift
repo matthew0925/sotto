@@ -22,6 +22,21 @@ private let ink = Color(red: 0x12/255, green: 0x17/255, blue: 0x2B/255)
 private let teal = Color(red: 0x2E/255, green: 0xC4/255, blue: 0xB6/255)
 private let coral = Color(red: 0xFF/255, green: 0x6B/255, blue: 0x5B/255)
 
+private extension View {
+    /// `.containerBackground(_:for:)` is iOS 17+ only; this target's
+    /// deployment minimum is iOS 16, so fall back to a plain `.background`
+    /// there. Pre-17 widgets rendering their own background this way is the
+    /// standard, Apple-documented approach for that OS range.
+    @ViewBuilder
+    func sottoWidgetBackground(_ color: Color) -> some View {
+        if #available(iOS 17.0, *) {
+            self.containerBackground(color, for: .widget)
+        } else {
+            self.background(color)
+        }
+    }
+}
+
 struct SottoTimelineEntry: TimelineEntry {
     let date: Date
 }
@@ -44,7 +59,7 @@ struct SottoSOSWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SottoTimelineProvider()) { _ in
             SOSWidgetView()
-                .containerBackground(ink, for: .widget)
+                .sottoWidgetBackground(ink)
                 .widgetURL(URL(string: "sotto://sos"))
         }
         .configurationDisplayName("そっと SOS")
@@ -59,7 +74,7 @@ struct SottoCheckinWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SottoTimelineProvider()) { _ in
             CheckinWidgetView()
-                .containerBackground(ink, for: .widget)
+                .sottoWidgetBackground(ink)
                 .widgetURL(URL(string: "sotto://checkin"))
         }
         .configurationDisplayName("そっと 見守り")
