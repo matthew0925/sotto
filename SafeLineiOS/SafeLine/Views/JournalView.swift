@@ -3,6 +3,7 @@ import PhotosUI
 
 struct JournalView: View {
     @EnvironmentObject var store: JournalStore
+    @EnvironmentObject var router: AppRouter
     @StateObject private var lock = JournalLock()
     @Environment(\.scenePhase) private var scenePhase
     @State private var text: String = ""
@@ -10,6 +11,11 @@ struct JournalView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
     @State private var shareItem: ShareItem?
+    /// Bound to the memo TextEditor. Tapping another tab does NOT
+    /// automatically resign a TextEditor's first-responder status in
+    /// SwiftUI, which previously left the keyboard covering the screen with
+    /// no way to switch tabs — this plus the onChange below fixes that.
+    @FocusState private var isTextEditorFocused: Bool
 
     var body: some View {
         ZStack {
@@ -23,6 +29,9 @@ struct JournalView: View {
         .onAppear { lock.authenticate() }
         .onChange(of: scenePhase) { phase in
             if phase != .active { lock.lock() }
+        }
+        .onChange(of: router.selectedTab) { _ in
+            isTextEditorFocused = false
         }
         .sheet(item: $shareItem) { item in
             ActivityView(activityItems: [item.data])
@@ -86,11 +95,18 @@ struct JournalView: View {
                     .foregroundColor(.safeText)
 
                 TextEditor(text: $text)
+                    .focused($isTextEditorFocused)
                     .frame(height: 90)
                     .padding(8)
                     .background(Color.safeCardFill)
                     .cornerRadius(10)
                     .foregroundColor(.safeText)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("完了") { isTextEditorFocused = false }
+                        }
+                    }
 
                 photoPickerRow
 
@@ -136,6 +152,7 @@ struct JournalView: View {
             }
             .padding(20)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var photoPickerRow: some View {

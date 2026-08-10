@@ -3,10 +3,16 @@ import MessageUI
 
 struct CheckInView: View {
     @EnvironmentObject var manager: CheckInManager
+    @EnvironmentObject var router: AppRouter
     @State private var selectedMinutes: Int = 30
     @State private var showingMessageComposer = false
     @State private var newContactName = ""
     @State private var newContactPhone = ""
+    /// See JournalView's matching property for why this exists — a
+    /// TextEditor doesn't reliably give up the keyboard on its own when the
+    /// user taps another tab.
+    private enum Field: Hashable { case message, contactName, contactPhone }
+    @FocusState private var focusedField: Field?
 
     private let presets = [15, 30, 60, 120]
 
@@ -37,7 +43,14 @@ struct CheckInView: View {
 
                     field(title: "伝えたいメッセージ") {
                         TextEditor(text: $manager.contactMessage)
+                            .focused($focusedField, equals: .message)
                             .frame(height: 70)
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("完了") { focusedField = nil }
+                                }
+                            }
                     }
                     .disabled(manager.isActive)
 
@@ -70,6 +83,7 @@ struct CheckInView: View {
                 }
                 .padding(20)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .sheet(isPresented: $showingMessageComposer) {
             if MFMessageComposeViewController.canSendText() {
@@ -96,6 +110,9 @@ struct CheckInView: View {
                 selectedMinutes = presets.min(by: { abs($0 - pending) < abs($1 - pending) }) ?? pending
                 manager.pendingStartMinutes = nil
             }
+        }
+        .onChange(of: router.selectedTab) { _ in
+            focusedField = nil
         }
     }
 
@@ -141,6 +158,7 @@ struct CheckInView: View {
             if !manager.isActive {
                 HStack(spacing: 8) {
                     TextField("名前", text: $newContactName)
+                        .focused($focusedField, equals: .contactName)
                         .font(.system(size: 13.5, design: .rounded))
                         .padding(10)
                         .background(Color.safeCardFill)
@@ -149,6 +167,7 @@ struct CheckInView: View {
                         .frame(maxWidth: .infinity)
 
                     TextField("電話番号", text: $newContactPhone)
+                        .focused($focusedField, equals: .contactPhone)
                         .keyboardType(.phonePad)
                         .font(.system(size: 13.5, design: .rounded))
                         .padding(10)
