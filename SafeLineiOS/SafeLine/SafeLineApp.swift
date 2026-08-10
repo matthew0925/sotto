@@ -4,18 +4,24 @@ import UserNotifications
 @main
 struct SafeLineApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var journalStore = JournalStore()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appDelegate.checkInManager)
+                .environmentObject(journalStore)
         }
     }
 }
 
-/// Handles notification permission + delegate setup.
-/// The check-in timeout flow relies on a local notification (see CheckInManager),
-/// because iOS does not allow silent background SMS sending without user confirmation.
+/// Owns `CheckInManager` (rather than a SwiftUI `@StateObject`) because the
+/// notification response delegate below needs to reach it directly — the
+/// "無事です" / "連絡先に知らせる" actions on the timeout notification can fire
+/// while the app is backgrounded, well outside any view's lifecycle.
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    let checkInManager = CheckInManager()
+
     func application(_ application: UIApplication,
                       didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UNUserNotificationCenter.current().delegate = self
@@ -28,5 +34,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                                  willPresent notification: UNNotification,
                                  withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound])
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                 didReceive response: UNNotificationResponse,
+                                 withCompletionHandler completionHandler: @escaping () -> Void) {
+        switch response.actionIdentifier {
+        case CheckInManager.safeActionId:
+            checkInManager.markSafe()
+        case CheckInManager.sendActionId:
+            checkInManager.requestSendAlert()
+        default:
+            break
+        }
+        completionHandler()
     }
 }

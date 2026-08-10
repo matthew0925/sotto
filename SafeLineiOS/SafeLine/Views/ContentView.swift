@@ -1,25 +1,22 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var checkInManager = CheckInManager()
-    @StateObject private var journalStore = JournalStore()
-
     var body: some View {
         TabView {
             HomeView()
-                .environmentObject(checkInManager)
                 .tabItem { Label("ホーム", systemImage: "house.fill") }
 
             CheckInView()
-                .environmentObject(checkInManager)
                 .tabItem { Label("見守り", systemImage: "clock.fill") }
 
             ResourcesView()
                 .tabItem { Label("相談窓口", systemImage: "phone.fill") }
 
             JournalView()
-                .environmentObject(journalStore)
                 .tabItem { Label("記録", systemImage: "note.text") }
+
+            SettingsView()
+                .tabItem { Label("設定", systemImage: "gearshape.fill") }
         }
         .tint(.safeTeal)
     }

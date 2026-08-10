@@ -52,15 +52,58 @@ struct CheckInView: View {
                             .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
                             .cornerRadius(12)
                     }
+
+                    if manager.isActive {
+                        Button {
+                            showingMessageComposer = true
+                        } label: {
+                            Text("今すぐ連絡先に知らせる")
+                                .font(.system(size: 13, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.safeCoral.opacity(0.15))
+                                .foregroundColor(.safeCoral)
+                                .cornerRadius(12)
+                        }
+
+                        locationStatus
+                    }
                 }
                 .padding(20)
             }
         }
         .sheet(isPresented: $showingMessageComposer) {
             if MFMessageComposeViewController.canSendText() {
-                MessageComposerView(recipient: manager.contactNumber, body: manager.contactMessage)
+                MessageComposerView(recipient: manager.contactNumber,
+                                     body: manager.contactMessage,
+                                     mapsLink: manager.locationManager.mapsLink)
             }
         }
+        .onChange(of: manager.wantsToSendAlert) { _, wants in
+            if wants {
+                showingMessageComposer = true
+                manager.wantsToSendAlert = false
+            }
+        }
+    }
+
+    private var locationStatus: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "location.fill")
+                .font(.system(size: 11))
+            Text(locationStatusText)
+                .font(.system(size: 11.5))
+        }
+        .foregroundColor(.white.opacity(0.45))
+    }
+
+    private var locationStatusText: String {
+        guard let updated = manager.locationManager.lastUpdated else {
+            return "位置情報を取得中…"
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return "現在地を \(formatter.string(from: updated)) に更新（送信時に自動で添付されます）"
     }
 
     private var timerDisplay: some View {
@@ -125,11 +168,16 @@ struct CheckInView: View {
 struct MessageComposerView: UIViewControllerRepresentable {
     let recipient: String
     let body: String
+    let mapsLink: String?
 
     func makeUIViewController(context: Context) -> MFMessageComposeViewController {
         let vc = MFMessageComposeViewController()
         vc.recipients = [recipient]
-        vc.body = body + "（現在地の共有はお使いの地図アプリからお願いします）"
+        if let mapsLink {
+            vc.body = body + "\n現在地: \(mapsLink)"
+        } else {
+            vc.body = body + "（現在地の共有はお使いの地図アプリからお願いします）"
+        }
         vc.messageComposeDelegate = context.coordinator
         return vc
     }

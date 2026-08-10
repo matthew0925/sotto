@@ -8,22 +8,44 @@ import Combine
 ///   2. If the user is safe, they cancel before it fires (`markSafe()`).
 ///   3. If it fires, the notification itself carries a one-tap action that opens the
 ///      app straight into the pre-filled SMS compose screen — the fastest path iOS allows.
+///
+/// While a check-in is active, `locationManager` keeps refreshing its fix (see that
+/// class for the background-tracking caveat) so the alert, whenever it's actually
+/// sent, carries a location close to real-time rather than a stale one from when
+/// the timer started.
 final class CheckInManager: ObservableObject {
     static let timeoutCategoryId = "CHECKIN_TIMEOUT"
     static let sendActionId = "SEND_ALERT"
     static let safeActionId = "IM_SAFE"
 
+    private static let contactKey = "sotto.checkin.contact"
+    private static let messageKey = "sotto.checkin.message"
+
     @Published var isActive: Bool = false
     @Published var endDate: Date?
     @Published var remainingSeconds: TimeInterval = 0
 
-    @Published var contactNumber: String = ""
-    @Published var contactMessage: String = "◯◯からの帰り道。時間までに連絡がなければ確認して。"
+    @Published var contactNumber: String {
+        didSet { KeychainStore.setString(contactNumber, for: Self.contactKey) }
+    }
+    @Published var contactMessage: String {
+        didSet { KeychainStore.setString(contactMessage, for: Self.messageKey) }
+    }
+
+    /// Set to true when the user taps "連絡先に知らせる" on the timeout notification.
+    /// CheckInView observes this to present the SMS composer, since the app may have
+    /// been backgrounded when the action fired.
+    @Published var wantsToSendAlert = false
+
+    let locationManager = LocationManager()
 
     private var ticker: Timer?
     private let notificationId = "safeline.checkin.timeout"
 
     init() {
+        contactNumber = KeychainStore.getString(Self.contactKey) ?? ""
+        contactMessage = KeychainStore.getString(Self.messageKey)
+            ?? "◯◯からの帰り道。時間までに連絡がなければ確認して。"
         registerNotificationCategory()
     }
 
@@ -46,6 +68,9 @@ final class CheckInManager: ObservableObject {
         isActive = true
         scheduleTimeoutNotification(at: target)
         startTicker()
+
+        locationManager.requestPermission()
+        locationManager.startTracking()
     }
 
     /// Called when the user taps "無事です" — either in-app or from the notification action.
@@ -55,6 +80,20 @@ final class CheckInManager: ObservableObject {
         remainingSeconds = 0
         ticker?.invalidate()
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
+        locationManager.stopTracking()
+    }
+
+    /// Called from the notification action, or from a manual "今すぐ連絡先に知らせる"
+    /// button while a check-in is active.
+    func requestSendAlert() {
+        wantsToSendAlert = true
+    }
+
+    /// Used by the "この端末からすべてのデータを削除" setting.
+    func eraseSavedData() {
+        markSafe()
+        contactNumber = ""
+        contactMessage = "◯◯からの帰り道。時間までに連絡がなければ確認して。"
     }
 
     private func scheduleTimeoutNotification(at date: Date) {
