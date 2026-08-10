@@ -61,6 +61,7 @@ final class CheckInManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(dailyReminderEnabled, forKey: Self.dailyReminderEnabledKey)
             if dailyReminderEnabled {
+                requestNotificationPermissionIfNeeded()
                 scheduleDailyReminder()
             } else {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.dailyReminderNotificationId])
@@ -149,6 +150,8 @@ final class CheckInManager: ObservableObject {
         contactMessage = message
         pendingStartMinutes = nil
 
+        requestNotificationPermissionIfNeeded()
+
         let target = Date().addingTimeInterval(TimeInterval(minutes * 60))
         endDate = target
         isActive = true
@@ -157,6 +160,19 @@ final class CheckInManager: ObservableObject {
 
         locationManager.requestPermission()
         locationManager.startTracking()
+    }
+
+    /// Only prompts if the user has never been asked — requesting again after
+    /// a denial just reshows the same system dialog with no extra context and
+    /// trains people to dismiss prompts on reflex. Called right before the
+    /// first notification this app actually needs is scheduled (check-in
+    /// start, or turning on the daily reminder) rather than at launch, so the
+    /// system prompt always has an obvious reason attached to it.
+    private func requestNotificationPermissionIfNeeded() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .notDetermined else { return }
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        }
     }
 
     /// Called when the user taps "無事です" — either in-app or from the notification action.

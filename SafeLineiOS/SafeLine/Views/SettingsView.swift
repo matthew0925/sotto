@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Restructured as a native Form/Section list (previously a stack of custom
+/// cards) as part of a deliberate declutter pass: Settings is a "calm mode"
+/// screen nobody touches mid-crisis, so the priority here is *familiarity* —
+/// the same grouped-list shape as iOS's own Settings app — over the more
+/// custom visual language used on Home/CheckIn. Reusing the OS idiom means
+/// less for a first-time user to parse, not more chrome to admire.
+///
 /// 技術仕様書 §6「削除：設定画面から『すべてのデータをこの端末から削除』を
 /// ワンタップで用意」— 加害者などに端末を確認された場合に、記録や見守り連絡先を
 /// 即座に消せることが安全確保に直結するため、確認は1段階のみに留めている。
@@ -15,49 +22,102 @@ struct SettingsView: View {
     ]
 
     var body: some View {
-        ZStack {
-            Color.safeInk.ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text("設定")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.safeText)
-
+        NavigationStack {
+            Form {
+                Section {
                     Text("このアプリはアカウント登録をせず、データはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
-                        .font(.system(size: 14.5, design: .rounded))
+                        .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
+                }
+                .listRowBackground(Color.clear)
 
-                    appIconSection
+                Section("ホーム画面") {
+                    NavigationLink {
+                        IconPickerView(iconManager: iconManager)
+                    } label: {
+                        HStack {
+                            Text("アイコン")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundColor(.safeText)
+                            Spacer()
+                            Text(iconManager.current.displayName)
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundColor(.safeTextFaint)
+                        }
+                    }
+                }
+                .listRowBackground(Color.safeCardFill)
 
-                    locationIntervalSection
+                Section {
+                    Toggle(isOn: $checkInManager.dailyReminderEnabled) {
+                        Text("毎日の見守りリマインダー")
+                            .font(.system(size: 15, design: .rounded))
+                            .foregroundColor(.safeText)
+                    }
+                    .tint(.safeTeal)
 
-                    dailyReminderSection
+                    if checkInManager.dailyReminderEnabled {
+                        DatePicker("時刻", selection: $checkInManager.dailyReminderTime, displayedComponents: .hourAndMinute)
+                            .font(.system(size: 14.5, design: .rounded))
+                            .foregroundColor(.safeText)
 
+                        Stepper(value: $checkInManager.dailyReminderDurationMinutes, in: 15...240, step: 15) {
+                            Text("目安の見守り時間：\(checkInManager.dailyReminderDurationMinutes)分")
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundColor(.safeTextDim)
+                        }
+                    }
+
+                    HStack {
+                        Text("位置情報の更新間隔")
+                            .font(.system(size: 15, design: .rounded))
+                            .foregroundColor(.safeText)
+                        Spacer()
+                        Picker("更新間隔", selection: Binding(
+                            get: { checkInManager.locationManager.updateInterval },
+                            set: { checkInManager.locationManager.updateInterval = $0 }
+                        )) {
+                            ForEach(intervalOptions, id: \.seconds) { option in
+                                Text(option.label).tag(option.seconds)
+                            }
+                        }
+                        .tint(.safeTeal)
+                    }
+                } header: {
+                    Text("見守り")
+                } footer: {
+                    Text("リマインダーはタイマーを自動で開始せず、見守り画面を開くだけです。位置情報の更新間隔は、短くするほど「今すぐ知らせる」時の位置が新しくなりますが、バッテリー消費が増えます。")
+                        .font(.system(size: 12.5, design: .rounded))
+                }
+                .listRowBackground(Color.safeCardFill)
+
+                Section {
                     Button(role: .destructive) {
                         showingEraseConfirm = true
                     } label: {
                         Text("この端末のデータをすべて消す")
-                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.safeCoral.opacity(0.15))
-                            .foregroundColor(.safeCoral)
-                            .cornerRadius(12)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
-
-                    Text("記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundColor(.safeTextFaint)
+                    .foregroundColor(.safeCoral)
 
                     if didErase {
                         Text("削除しました。")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.safeTeal)
                     }
+                } header: {
+                    Text("データ")
+                } footer: {
+                    Text("記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。この操作は取り消せません。")
+                        .font(.system(size: 12.5, design: .rounded))
                 }
-                .padding(20)
+                .listRowBackground(Color.safeCardFill)
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.safeInk)
+            .navigationTitle("設定")
         }
+        .tint(.safeTeal)
         .confirmationDialog("この端末のデータをすべて消しますか？",
                              isPresented: $showingEraseConfirm,
                              titleVisibility: .visible) {
@@ -71,38 +131,46 @@ struct SettingsView: View {
             Text("この操作は取り消せません。")
         }
     }
+}
 
-    private var appIconSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("ホーム画面のアイコン")
-                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
-                .foregroundColor(.safeText)
+/// Full-page icon picker, pushed from the "アイコン" row rather than shown
+/// inline — moving a rarely-touched choice off the main Settings list so
+/// that list stays scannable at a glance.
+struct IconPickerView: View {
+    @ObservedObject var iconManager: IconManager
 
-            Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundColor(.safeTextFaint)
+    var body: some View {
+        ZStack {
+            Color.safeInk.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
+                        .font(.system(size: 13.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
 
-            if !iconManager.supportsAlternateIcons {
-                Text("この端末ではアイコンの切り替えに対応していません。")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundColor(.safeTextFaint)
-            } else {
-                HStack(spacing: 12) {
-                    ForEach(AppIconOption.allCases) { option in
-                        iconChoice(option)
+                    if !iconManager.supportsAlternateIcons {
+                        Text("この端末ではアイコンの切り替えに対応していません。")
+                            .font(.system(size: 13.5, design: .rounded))
+                            .foregroundColor(.safeTextFaint)
+                    } else {
+                        HStack(spacing: 12) {
+                            ForEach(AppIconOption.allCases) { option in
+                                iconChoice(option)
+                            }
+                        }
+
+                        if let error = iconManager.lastErrorMessage {
+                            Text(error)
+                                .font(.system(size: 12.5, design: .rounded))
+                                .foregroundColor(.safeCoral)
+                        }
                     }
                 }
-
-                if let error = iconManager.lastErrorMessage {
-                    Text(error)
-                        .font(.system(size: 12.5, design: .rounded))
-                        .foregroundColor(.safeCoral)
-                }
+                .padding(20)
             }
         }
-        .padding(14)
-        .background(Color.safeCardFill)
-        .cornerRadius(14)
+        .navigationTitle("アイコン")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func iconChoice(_ option: AppIconOption) -> some View {
@@ -131,60 +199,5 @@ struct SettingsView: View {
                     .foregroundColor(isSelected ? .safeTeal : .safeTextFaint)
             }
         }
-    }
-
-    private var dailyReminderSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle(isOn: $checkInManager.dailyReminderEnabled) {
-                Text("毎日の見守りリマインダー")
-                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
-                    .foregroundColor(.safeText)
-            }
-            .tint(.safeTeal)
-
-            Text("決まった時間に「見守りをセットしますか？」と通知します。通知はタイマーを自動で開始せず、開くだけです。")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundColor(.safeTextFaint)
-
-            if checkInManager.dailyReminderEnabled {
-                DatePicker("時刻", selection: $checkInManager.dailyReminderTime, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.compact)
-                    .foregroundColor(.safeText)
-
-                Stepper(value: $checkInManager.dailyReminderDurationMinutes, in: 15...240, step: 15) {
-                    Text("目安の見守り時間：\(checkInManager.dailyReminderDurationMinutes)分")
-                        .font(.system(size: 13.5, design: .rounded))
-                        .foregroundColor(.safeTextDim)
-                }
-            }
-        }
-        .padding(14)
-        .background(Color.safeCardFill)
-        .cornerRadius(14)
-    }
-
-    private var locationIntervalSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("見守り中の位置情報 更新間隔")
-                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
-                .foregroundColor(.safeText)
-
-            Text("短くするほど「今すぐ知らせる」を押したときの位置が新しくなりますが、バッテリー消費が増えます。")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundColor(.safeTextFaint)
-
-            Picker("更新間隔", selection: Binding(
-                get: { checkInManager.locationManager.updateInterval },
-                set: { checkInManager.locationManager.updateInterval = $0 }
-            )) {
-                ForEach(intervalOptions, id: \.seconds) { option in
-                    Text(option.label).tag(option.seconds)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-        .padding(14)
-        .background(Color.safeCardFill)
-        .cornerRadius(14)
     }
 }

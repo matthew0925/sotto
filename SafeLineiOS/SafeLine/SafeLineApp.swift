@@ -36,7 +36,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication,
                       didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UNUserNotificationCenter.current().delegate = self
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // Deliberately NOT requesting notification authorization here. Asking
+        // for permission before the person has done anything, with no
+        // context for why, is exactly the kind of request that erodes trust
+        // ("why does this app want to notify me before I've even used it?").
+        // CheckInManager requests it itself, right before it schedules the
+        // first notification it actually needs — either the check-in timeout
+        // (start()) or the daily reminder (dailyReminderEnabled's didSet) —
+        // so the ask always has a visible reason attached.
         return true
     }
 
