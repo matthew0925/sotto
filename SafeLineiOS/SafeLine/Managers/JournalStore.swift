@@ -5,6 +5,12 @@ struct JournalEntry: Identifiable, Codable {
     let id: UUID
     let date: Date
     let text: String
+    /// True if a photo was attached. The photo itself is never stored inside
+    /// this JSON blob — it lives as its own encrypted file (see
+    /// `JournalStore.photoFileURL(for:)`) so a journal with several photos
+    /// doesn't force the whole entry list to be re-encrypted/re-written on
+    /// every save.
+    var hasPhoto: Bool = false
 }
 
 /// Entries are JSON-encoded, then sealed with AES-GCM before touching disk.
@@ -26,6 +32,13 @@ final class JournalStore: ObservableObject {
     private let fileURL: URL = {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return dir.appendingPathComponent("journal.enc")
+    }()
+
+    private let photosDirURL: URL = {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("journal_photos", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
     }()
 
     private static let keychainKey = "sotto.journal.key"
@@ -67,15 +80,50 @@ final class JournalStore: ObservableObject {
         applyFileProtection()
     }
 
-    func add(text: String, date: Date = Date()) {
-        let entry = JournalEntry(id: UUID(), date: date, text: text)
+    func add(text: String, date: Date = Date(), photoData: Data? = nil) {
+        let entry = JournalEntry(id: UUID(), date: date, text: text, hasPhoto: photoData != nil)
+        if let photoData {
+            guard savePhoto(photoData, for: entry.id) else {
+                lastSaveError = "写真を保存できませんでした。もう一度試してみてください。"
+                return
+            }
+        }
         entries.append(entry)
         save()
     }
 
     func delete(_ entry: JournalEntry) {
         entries.removeAll { $0.id == entry.id }
+        try? FileManager.default.removeItem(at: photoFileURL(for: entry.id))
         save()
+    }
+
+    /// Decrypts and returns the photo for an entry, if it has one. Called
+    /// on-demand from the view rather than kept in memory for every entry.
+    func photo(for entry: JournalEntry) -> Data? {
+        guard entry.hasPhoto, let key = symmetricKey else { return nil }
+        guard let sealed = try? Data(contentsOf: photoFileURL(for: entry.id)) else { return nil }
+        guard let box = try? AES.GCM.SealedBox(combined: sealed) else { return nil }
+        return try? AES.GCM.open(box, using: key)
+    }
+
+    private func savePhoto(_ data: Data, for id: UUID) -> Bool {
+        guard let key = symmetricKey else { return false }
+        guard let sealed = try? AES.GCM.seal(data, using: key), let combined = sealed.combined else { return false }
+        do {
+            try combined.write(to: photoFileURL(for: id), options: .completeFileProtection)
+            var url = photoFileURL(for: id)
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? url.setResourceValues(values)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func photoFileURL(for id: UUID) -> URL {
+        photosDirURL.appendingPathComponent("\(id.uuidString).enc")
     }
 
     /// Used by the "この端末からすべてのデータを削除" setting — wipes both the
@@ -84,6 +132,8 @@ final class JournalStore: ObservableObject {
     func eraseAll() {
         entries = []
         try? FileManager.default.removeItem(at: fileURL)
+        try? FileManager.default.removeItem(at: photosDirURL)
+        try? FileManager.default.createDirectory(at: photosDirURL, withIntermediateDirectories: true)
         KeychainStore.delete(Self.keychainKey)
         cachedSymmetricKey = nil
     }

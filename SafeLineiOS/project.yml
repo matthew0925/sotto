@@ -24,9 +24,17 @@ targets:
         NSLocationWhenInUseUsageDescription: 見守りチェックイン中に、現在地を信頼できる連絡先へ共有するために使用します。
         # Required for JournalLock's Face ID gate on the journal screen.
         NSFaceIDUsageDescription: 記録（ジャーナル）を本人以外に見られないよう、Face IDで保護するために使用します。
+        # Required for JournalView's PhotosPicker (journal photo attachments).
+        NSPhotoLibraryUsageDescription: 記録に写真を添付するために使用します。
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # sotto:// deep link scheme, used by SottoWidget (home/lock screen
+        # widgets) to open directly to the SOS screen or check-in tab.
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - sotto
+            CFBundleURLName: com.takashi.sotto
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.takashi.sotto
@@ -37,3 +45,26 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     scheme:
       gatherCoverageData: false
+    dependencies:
+      - target: SottoWidgetExtension
+        embed: true
+
+  SottoWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: SottoWidget
+    info:
+      path: Generated-Widget-Info.plist
+      properties:
+        CFBundleDisplayName: そっと
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.takashi.sotto.widget
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: "YES"

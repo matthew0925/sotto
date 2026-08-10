@@ -1,6 +1,7 @@
 # Xcode / XcodeGen
 SafeLineiOS/*.xcodeproj
 SafeLineiOS/Generated-Info.plist
+SafeLineiOS/Generated-Widget-Info.plist
 xcuserdata/
 DerivedData/
 *.xcuserstate

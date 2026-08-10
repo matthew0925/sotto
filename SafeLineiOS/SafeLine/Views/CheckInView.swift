@@ -5,6 +5,8 @@ struct CheckInView: View {
     @EnvironmentObject var manager: CheckInManager
     @State private var selectedMinutes: Int = 30
     @State private var showingMessageComposer = false
+    @State private var newContactName = ""
+    @State private var newContactPhone = ""
 
     private let presets = [15, 30, 60, 120]
 
@@ -31,11 +33,7 @@ struct CheckInView: View {
                     .opacity(manager.isActive ? 0.4 : 1)
                     .disabled(manager.isActive)
 
-                    field(title: "知らせたい人（電話番号）") {
-                        TextField("090-1234-5678", text: $manager.contactNumber)
-                            .keyboardType(.phonePad)
-                    }
-                    .disabled(manager.isActive)
+                    contactsSection
 
                     field(title: "伝えたいメッセージ") {
                         TextEditor(text: $manager.contactMessage)
@@ -48,10 +46,11 @@ struct CheckInView: View {
                             .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.safeTeal)
-                            .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
+                            .background(manager.contacts.isEmpty && !manager.isActive ? Color.safeCardFillStrong : Color.safeTeal)
+                            .foregroundColor(manager.contacts.isEmpty && !manager.isActive ? .safeTextFaint : .safeOnAccent)
                             .cornerRadius(12)
                     }
+                    .disabled(manager.contacts.isEmpty && !manager.isActive)
 
                     if manager.isActive {
                         Button {
@@ -74,7 +73,7 @@ struct CheckInView: View {
         }
         .sheet(isPresented: $showingMessageComposer) {
             if MFMessageComposeViewController.canSendText() {
-                MessageComposerView(recipient: manager.contactNumber,
+                MessageComposerView(recipients: manager.contacts.map(\.phoneNumber),
                                      body: manager.contactMessage,
                                      mapsLink: manager.locationManager.mapsLink)
             } else {
@@ -83,7 +82,7 @@ struct CheckInView: View {
                 // empty sheet with no explanation and no way forward, which is
                 // unacceptable for what's meant to be the emergency path.
                 // Offer an immediate fallback instead of a dead end.
-                SMSUnavailableView(contactNumber: manager.contactNumber)
+                SMSUnavailableView(contacts: manager.contacts)
             }
         }
         .onChange(of: manager.wantsToSendAlert) { wants in
@@ -92,6 +91,92 @@ struct CheckInView: View {
                 manager.wantsToSendAlert = false
             }
         }
+        .onAppear {
+            if let pending = manager.pendingStartMinutes {
+                selectedMinutes = presets.min(by: { abs($0 - pending) < abs($1 - pending) }) ?? pending
+                manager.pendingStartMinutes = nil
+            }
+        }
+    }
+
+    // MARK: - Contacts
+
+    private var contactsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("知らせたい人")
+                .font(.system(size: 13.5, design: .rounded))
+                .foregroundColor(.safeTextFaint)
+
+            if manager.contacts.isEmpty {
+                Text("まだ誰も登録されていません。下から追加してください。")
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundColor(.safeTextFaint)
+            } else {
+                ForEach(manager.contacts) { contact in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(contact.name)
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.safeText)
+                            Text(contact.phoneNumber)
+                                .font(.system(size: 12.5, design: .monospaced))
+                                .foregroundColor(.safeTextDim)
+                        }
+                        Spacer()
+                        if !manager.isActive {
+                            Button {
+                                manager.contacts.removeAll { $0.id == contact.id }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.safeTextFaint)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.safeCardFill)
+                    .cornerRadius(10)
+                }
+            }
+
+            if !manager.isActive {
+                HStack(spacing: 8) {
+                    TextField("名前", text: $newContactName)
+                        .font(.system(size: 13.5, design: .rounded))
+                        .padding(10)
+                        .background(Color.safeCardFill)
+                        .cornerRadius(10)
+                        .foregroundColor(.safeText)
+                        .frame(maxWidth: .infinity)
+
+                    TextField("電話番号", text: $newContactPhone)
+                        .keyboardType(.phonePad)
+                        .font(.system(size: 13.5, design: .rounded))
+                        .padding(10)
+                        .background(Color.safeCardFill)
+                        .cornerRadius(10)
+                        .foregroundColor(.safeText)
+                        .frame(maxWidth: .infinity)
+
+                    Button {
+                        addContact()
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundColor(.safeTeal)
+                    }
+                    .disabled(newContactPhone.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func addContact() {
+        let phone = newContactPhone.trimmingCharacters(in: .whitespaces)
+        guard !phone.isEmpty else { return }
+        let name = newContactName.trimmingCharacters(in: .whitespaces)
+        manager.contacts.append(EmergencyContact(name: name.isEmpty ? "連絡先" : name, phoneNumber: phone))
+        newContactName = ""
+        newContactPhone = ""
     }
 
     private var locationStatus: some View {
@@ -161,8 +246,8 @@ struct CheckInView: View {
         if manager.isActive {
             manager.markSafe()
         } else {
-            guard !manager.contactNumber.isEmpty else { return }
-            manager.start(minutes: selectedMinutes, contact: manager.contactNumber, message: manager.contactMessage)
+            guard !manager.contacts.isEmpty else { return }
+            manager.start(minutes: selectedMinutes, contacts: manager.contacts, message: manager.contactMessage)
         }
     }
 
@@ -177,7 +262,7 @@ struct CheckInView: View {
 /// compose SMS at all. Always offers a phone call as a next step rather than
 /// leaving the user at a dead end during what may be an emergency.
 struct SMSUnavailableView: View {
-    let contactNumber: String
+    let contacts: [EmergencyContact]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -190,22 +275,24 @@ struct SMSUnavailableView: View {
                 .multilineTextAlignment(.center)
             Text("かわりに、電話でつながることができます。")
                 .font(.system(size: 14.5, design: .rounded))
-                .foregroundColor(.secondary)
+                .foregroundColor(.safeTextDim)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
-            if !contactNumber.isEmpty, let url = URL(string: "tel:\(contactNumber)") {
-                Button {
-                    UIApplication.shared.open(url)
-                    dismiss()
-                } label: {
-                    Text("電話でつながる")
-                        .font(.system(size: 15.5, weight: .semibold, design: .rounded))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 13)
-                        .background(Color.safeTeal)
-                        .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
-                        .cornerRadius(12)
+            ForEach(contacts) { contact in
+                if let url = URL(string: "tel:\(contact.phoneNumber)") {
+                    Button {
+                        UIApplication.shared.open(url)
+                        dismiss()
+                    } label: {
+                        Text("\(contact.name)に電話をかける")
+                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(Color.safeTeal)
+                            .foregroundColor(.safeOnAccent)
+                            .cornerRadius(12)
+                    }
                 }
             }
         }
@@ -216,13 +303,13 @@ struct SMSUnavailableView: View {
 /// Wraps MFMessageComposeViewController — this is the one-tap-confirm SMS path
 /// triggered from the "連絡先に知らせる" notification action per iOS's no-silent-send rule.
 struct MessageComposerView: UIViewControllerRepresentable {
-    let recipient: String
+    let recipients: [String]
     let body: String
     let mapsLink: String?
 
     func makeUIViewController(context: Context) -> MFMessageComposeViewController {
         let vc = MFMessageComposeViewController()
-        vc.recipients = [recipient]
+        vc.recipients = recipients
         if let mapsLink {
             vc.body = body + "\n現在地: \(mapsLink)"
         } else {

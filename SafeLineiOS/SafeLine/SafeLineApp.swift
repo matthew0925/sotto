@@ -5,12 +5,20 @@ import UserNotifications
 struct SafeLineApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var journalStore = JournalStore()
+    @StateObject private var router = AppRouter()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appDelegate.checkInManager)
                 .environmentObject(journalStore)
+                .environmentObject(router)
+                .onOpenURL { url in
+                    router.handle(url: url)
+                }
+                .onAppear {
+                    appDelegate.router = router
+                }
         }
     }
 }
@@ -21,6 +29,9 @@ struct SafeLineApp: App {
 /// while the app is backgrounded, well outside any view's lifecycle.
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     let checkInManager = CheckInManager()
+    /// Set once by SafeLineApp's `.onAppear` so the notification handler
+    /// below can also switch tabs (e.g. daily reminder → 見守り tab).
+    weak var router: AppRouter?
 
     func application(_ application: UIApplication,
                       didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -44,12 +55,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // must only be mutated on main — this is the "無事です" /
         // "連絡先に知らせる" path, the two most safety-critical actions in
         // the app, so this dispatch is not optional polish.
-        DispatchQueue.main.async { [checkInManager] in
+        DispatchQueue.main.async { [checkInManager, router] in
             switch response.actionIdentifier {
             case CheckInManager.safeActionId:
                 checkInManager.markSafe()
             case CheckInManager.sendActionId:
                 checkInManager.requestSendAlert()
+            case CheckInManager.startCheckinActionId, UNNotificationDefaultActionIdentifier
+                where response.notification.request.content.categoryIdentifier == CheckInManager.dailyReminderCategoryId:
+                checkInManager.requestStartCheckin()
+                router?.selectedTab = .checkin
             default:
                 break
             }

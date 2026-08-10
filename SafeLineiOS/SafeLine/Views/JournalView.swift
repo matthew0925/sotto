@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct JournalView: View {
     @EnvironmentObject var store: JournalStore
@@ -6,6 +7,9 @@ struct JournalView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var text: String = ""
     @State private var date: Date = Date()
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var selectedPhotoData: Data?
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         ZStack {
@@ -19,6 +23,9 @@ struct JournalView: View {
         .onAppear { lock.authenticate() }
         .onChange(of: scenePhase) { phase in
             if phase != .active { lock.lock() }
+        }
+        .sheet(item: $shareItem) { item in
+            ActivityView(activityItems: [item.data])
         }
     }
 
@@ -45,7 +52,7 @@ struct JournalView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .background(Color.safeTeal)
-                    .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
+                    .foregroundColor(.safeOnAccent)
                     .cornerRadius(12)
             }
         }
@@ -54,9 +61,22 @@ struct JournalView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("記録（あなたの端末だけに）")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundColor(.safeText)
+                HStack(alignment: .top) {
+                    Text("記録（あなたの端末だけに）")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundColor(.safeText)
+                    Spacer()
+                    if !store.entries.isEmpty {
+                        Button {
+                            let pdf = JournalExporter.makePDF(entries: store.entries)
+                            shareItem = ShareItem(data: pdf)
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 18))
+                                .foregroundColor(.safeTeal)
+                        }
+                    }
+                }
                 Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末にだけ保存され、クラウドには送りません。誰にも見せなくて大丈夫です。あなたのための記録です。")
                     .font(.system(size: 14.5, design: .rounded))
                     .foregroundColor(.safeTextDim)
@@ -72,14 +92,18 @@ struct JournalView: View {
                     .cornerRadius(10)
                     .foregroundColor(.safeText)
 
+                photoPickerRow
+
                 Button {
                     guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                    store.add(text: text, date: date)
+                    store.add(text: text, date: date, photoData: selectedPhotoData)
                     // Only clear the input if the save actually succeeded —
                     // if it failed, leave the text in place so nothing typed
                     // is lost and the user can retry immediately.
                     if store.lastSaveError == nil {
                         text = ""
+                        selectedPhotoData = nil
+                        selectedPhotoItem = nil
                     }
                 } label: {
                     Text("そっと保存する")
@@ -87,7 +111,7 @@ struct JournalView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(Color.safeTeal)
-                        .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
+                        .foregroundColor(.safeOnAccent)
                         .cornerRadius(12)
                 }
 
@@ -106,20 +130,103 @@ struct JournalView: View {
                         .padding(.top, 30)
                 } else {
                     ForEach(store.entries) { entry in
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(entry.date.formatted(date: .abbreviated, time: .shortened))
-                                .font(.system(size: 12.5, design: .monospaced))
-                                .foregroundColor(.safeTeal)
-                            Text(entry.text)
-                                .font(.system(size: 14.5, design: .rounded))
-                                .foregroundColor(.safeText)
-                        }
-                        .padding(.leading, 12)
-                        .overlay(Rectangle().fill(Color.safeTeal).frame(width: 2), alignment: .leading)
+                        JournalEntryRow(entry: entry, store: store)
                     }
                 }
             }
             .padding(20)
         }
     }
+
+    private var photoPickerRow: some View {
+        HStack(spacing: 10) {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                Label(selectedPhotoData == nil ? "写真を添付" : "写真を変更",
+                      systemImage: "photo.on.rectangle")
+                    .font(.system(size: 13.5, design: .rounded))
+                    .foregroundColor(.safeTeal)
+            }
+            .onChange(of: selectedPhotoItem) { item in
+                Task {
+                    if let item, let data = try? await item.loadTransferable(type: Data.self) {
+                        selectedPhotoData = data
+                    }
+                }
+            }
+
+            if let selectedPhotoData, let uiImage = UIImage(data: selectedPhotoData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                Button {
+                    self.selectedPhotoData = nil
+                    self.selectedPhotoItem = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.safeTextFaint)
+                }
+            }
+            Spacer()
+        }
+    }
+}
+
+/// A single journal entry row. Kept as its own view so the photo can be
+/// decrypted lazily (on appear) rather than all at once when the list loads.
+private struct JournalEntryRow: View {
+    let entry: JournalEntry
+    let store: JournalStore
+    @State private var photo: UIImage?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(entry.date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.system(size: 12.5, design: .monospaced))
+                    .foregroundColor(.safeTeal)
+                Text(entry.text)
+                    .font(.system(size: 14.5, design: .rounded))
+                    .foregroundColor(.safeText)
+            }
+            .padding(.leading, 12)
+            .overlay(Rectangle().fill(Color.safeTeal).frame(width: 2), alignment: .leading)
+
+            if entry.hasPhoto {
+                if let photo {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.safeCardFill)
+                        .frame(width: 44, height: 44)
+                        .onAppear {
+                            if let data = store.photo(for: entry) {
+                                photo = UIImage(data: data)
+                            }
+                        }
+                }
+            }
+        }
+        .padding(.bottom, 16)
+    }
+}
+
+private struct ShareItem: Identifiable {
+    let id = UUID()
+    let data: Data
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

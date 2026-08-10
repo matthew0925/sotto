@@ -17,16 +17,30 @@ final class CheckInManager: ObservableObject {
     static let timeoutCategoryId = "CHECKIN_TIMEOUT"
     static let sendActionId = "SEND_ALERT"
     static let safeActionId = "IM_SAFE"
+    static let dailyReminderCategoryId = "DAILY_REMINDER"
+    static let startCheckinActionId = "START_CHECKIN"
 
-    private static let contactKey = "sotto.checkin.contact"
+    private static let contactsKey = "sotto.checkin.contacts"
+    /// Pre-multi-contact key, kept only so `init()` can migrate anyone who
+    /// already has a single saved contact into the new array format.
+    private static let legacyContactKey = "sotto.checkin.contact"
     private static let messageKey = "sotto.checkin.message"
+    private static let dailyReminderEnabledKey = "sotto.checkin.dailyReminder.enabled"
+    private static let dailyReminderHourKey = "sotto.checkin.dailyReminder.hour"
+    private static let dailyReminderMinuteKey = "sotto.checkin.dailyReminder.minute"
+    private static let dailyReminderDurationKey = "sotto.checkin.dailyReminder.durationMinutes"
+    private static let dailyReminderNotificationId = "safeline.checkin.dailyReminder"
 
     @Published var isActive: Bool = false
     @Published var endDate: Date?
     @Published var remainingSeconds: TimeInterval = 0
 
-    @Published var contactNumber: String {
-        didSet { KeychainStore.setString(contactNumber, for: Self.contactKey) }
+    @Published var contacts: [EmergencyContact] {
+        didSet {
+            if let data = try? JSONEncoder().encode(contacts) {
+                KeychainStore.set(data, for: Self.contactsKey)
+            }
+        }
     }
     @Published var contactMessage: String {
         didSet { KeychainStore.setString(contactMessage, for: Self.messageKey) }
@@ -37,6 +51,37 @@ final class CheckInManager: ObservableObject {
     /// been backgrounded when the action fired.
     @Published var wantsToSendAlert = false
 
+    /// Set when the daily check-in reminder (or a widget deep link) is tapped,
+    /// so CheckInView can pre-select a duration. Never auto-starts the timer —
+    /// starting still requires the explicit "この内容で見守りをはじめる" tap,
+    /// consistent with how every other alert/send action in this app works.
+    @Published var pendingStartMinutes: Int?
+
+    @Published var dailyReminderEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(dailyReminderEnabled, forKey: Self.dailyReminderEnabledKey)
+            if dailyReminderEnabled {
+                scheduleDailyReminder()
+            } else {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.dailyReminderNotificationId])
+            }
+        }
+    }
+    /// Hour/minute of day the reminder fires (only those two components are used).
+    @Published var dailyReminderTime: Date {
+        didSet {
+            let cal = Calendar.current
+            UserDefaults.standard.set(cal.component(.hour, from: dailyReminderTime), forKey: Self.dailyReminderHourKey)
+            UserDefaults.standard.set(cal.component(.minute, from: dailyReminderTime), forKey: Self.dailyReminderMinuteKey)
+            if dailyReminderEnabled {
+                scheduleDailyReminder()
+            }
+        }
+    }
+    @Published var dailyReminderDurationMinutes: Int {
+        didSet { UserDefaults.standard.set(dailyReminderDurationMinutes, forKey: Self.dailyReminderDurationKey) }
+    }
+
     let locationManager = LocationManager()
 
     private var ticker: Timer?
@@ -44,10 +89,31 @@ final class CheckInManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        contactNumber = KeychainStore.getString(Self.contactKey) ?? ""
+        if let data = KeychainStore.get(Self.contactsKey),
+           let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
+            contacts = decoded
+        } else if let legacyNumber = KeychainStore.getString(Self.legacyContactKey), !legacyNumber.isEmpty {
+            // Migrate a pre-multi-contact install: one saved number becomes
+            // the first entry rather than silently disappearing.
+            contacts = [EmergencyContact(name: "連絡先", phoneNumber: legacyNumber)]
+        } else {
+            contacts = []
+        }
+
         contactMessage = KeychainStore.getString(Self.messageKey)
             ?? "◯◯からの帰り道。時間までに連絡がなければ確認して。"
-        registerNotificationCategory()
+
+        dailyReminderEnabled = UserDefaults.standard.bool(forKey: Self.dailyReminderEnabledKey)
+        let savedHour = UserDefaults.standard.object(forKey: Self.dailyReminderHourKey) as? Int ?? 21
+        let savedMinute = UserDefaults.standard.object(forKey: Self.dailyReminderMinuteKey) as? Int ?? 0
+        var comps = DateComponents()
+        comps.hour = savedHour
+        comps.minute = savedMinute
+        dailyReminderTime = Calendar.current.date(from: comps) ?? Date()
+        let savedDuration = UserDefaults.standard.object(forKey: Self.dailyReminderDurationKey) as? Int ?? 30
+        dailyReminderDurationMinutes = savedDuration
+
+        registerNotificationCategories()
 
         // Forward LocationManager's own @Published changes so views that only
         // observe CheckInManager (e.g. CheckInView's location status line,
@@ -56,21 +122,32 @@ final class CheckInManager: ObservableObject {
         locationManager.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+
+        if dailyReminderEnabled {
+            scheduleDailyReminder()
+        }
     }
 
-    private func registerNotificationCategory() {
+    private func registerNotificationCategories() {
         let safeAction = UNNotificationAction(identifier: Self.safeActionId, title: "無事です", options: [])
         let sendAction = UNNotificationAction(identifier: Self.sendActionId, title: "連絡先に知らせる", options: [.foreground, .destructive])
-        let category = UNNotificationCategory(identifier: Self.timeoutCategoryId,
-                                               actions: [safeAction, sendAction],
-                                               intentIdentifiers: [],
-                                               options: [])
-        UNUserNotificationCenter.current().setNotificationCategories([category])
+        let timeoutCategory = UNNotificationCategory(identifier: Self.timeoutCategoryId,
+                                                       actions: [safeAction, sendAction],
+                                                       intentIdentifiers: [],
+                                                       options: [])
+
+        let startAction = UNNotificationAction(identifier: Self.startCheckinActionId, title: "見守りを開く", options: [.foreground])
+        let reminderCategory = UNNotificationCategory(identifier: Self.dailyReminderCategoryId,
+                                                        actions: [startAction],
+                                                        intentIdentifiers: [],
+                                                        options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([timeoutCategory, reminderCategory])
     }
 
-    func start(minutes: Int, contact: String, message: String) {
-        contactNumber = contact
+    func start(minutes: Int, contacts: [EmergencyContact], message: String) {
+        self.contacts = contacts
         contactMessage = message
+        pendingStartMinutes = nil
 
         let target = Date().addingTimeInterval(TimeInterval(minutes * 60))
         endDate = target
@@ -98,11 +175,19 @@ final class CheckInManager: ObservableObject {
         wantsToSendAlert = true
     }
 
+    /// Called when the daily reminder notification (or its "見守りを開く" action)
+    /// is tapped, or from a widget deep link. CheckInView reads this once to
+    /// pre-select a duration and then clears it.
+    func requestStartCheckin(minutes: Int? = nil) {
+        pendingStartMinutes = minutes ?? dailyReminderDurationMinutes
+    }
+
     /// Used by the "この端末からすべてのデータを削除" setting.
     func eraseSavedData() {
         markSafe()
-        contactNumber = ""
+        contacts = []
         contactMessage = "◯◯からの帰り道。時間までに連絡がなければ確認して。"
+        dailyReminderEnabled = false
     }
 
     private func scheduleTimeoutNotification(at date: Date) {
@@ -119,11 +204,29 @@ final class CheckInManager: ObservableObject {
         // false impression that this notification bypasses Silent/Focus mode.
         content.sound = .default
         content.categoryIdentifier = Self.timeoutCategoryId
-        content.userInfo = ["contact": contactNumber, "message": contactMessage]
 
         let interval = max(1, date.timeIntervalSinceNow)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(identifier: notificationId, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    /// Fires once a day at the configured time as a nudge to set up tonight's
+    /// check-in — it does NOT start one by itself (see `requestStartCheckin`'s
+    /// doc comment for why).
+    private func scheduleDailyReminder() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.dailyReminderNotificationId])
+
+        let content = UNMutableNotificationContent()
+        content.title = "見守りチェックインの時間です"
+        content.body = "出かける前に見守りをセットしておきますか？"
+        content.sound = .default
+        content.categoryIdentifier = Self.dailyReminderCategoryId
+
+        var triggerComponents = Calendar.current.dateComponents([.hour, .minute], from: dailyReminderTime)
+        triggerComponents.calendar = Calendar.current
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: true)
+        let request = UNNotificationRequest(identifier: Self.dailyReminderNotificationId, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request)
     }
 

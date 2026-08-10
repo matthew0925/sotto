@@ -31,6 +31,8 @@ struct SettingsView: View {
 
                     locationIntervalSection
 
+                    dailyReminderSection
+
                     Button(role: .destructive) {
                         showingEraseConfirm = true
                     } label: {
@@ -129,6 +131,36 @@ struct SettingsView: View {
                     .foregroundColor(isSelected ? .safeTeal : .safeTextFaint)
             }
         }
+    }
+
+    private var dailyReminderSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: $checkInManager.dailyReminderEnabled) {
+                Text("毎日の見守りリマインダー")
+                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                    .foregroundColor(.safeText)
+            }
+            .tint(.safeTeal)
+
+            Text("決まった時間に「見守りをセットしますか？」と通知します。通知はタイマーを自動で開始せず、開くだけです。")
+                .font(.system(size: 13, design: .rounded))
+                .foregroundColor(.safeTextFaint)
+
+            if checkInManager.dailyReminderEnabled {
+                DatePicker("時刻", selection: $checkInManager.dailyReminderTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.compact)
+                    .foregroundColor(.safeText)
+
+                Stepper(value: $checkInManager.dailyReminderDurationMinutes, in: 15...240, step: 15) {
+                    Text("目安の見守り時間：\(checkInManager.dailyReminderDurationMinutes)分")
+                        .font(.system(size: 13.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.safeCardFill)
+        .cornerRadius(14)
     }
 
     private var locationIntervalSection: some View {

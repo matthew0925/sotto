@@ -1,24 +1,40 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var router: AppRouter
+    @AppStorage("sotto.onboarding.completed") private var onboardingCompleted = false
+    @State private var showOnboarding = false
+
     var body: some View {
-        TabView {
+        TabView(selection: $router.selectedTab) {
             HomeView()
                 .tabItem { Label("ホーム", systemImage: "house.fill") }
+                .tag(AppTab.home)
 
             CheckInView()
                 .tabItem { Label("見守り", systemImage: "clock.fill") }
+                .tag(AppTab.checkin)
 
             ResourcesView()
                 .tabItem { Label("相談窓口", systemImage: "phone.fill") }
+                .tag(AppTab.resources)
 
             JournalView()
                 .tabItem { Label("記録", systemImage: "note.text") }
+                .tag(AppTab.journal)
 
             SettingsView()
                 .tabItem { Label("設定", systemImage: "gearshape.fill") }
+                .tag(AppTab.settings)
         }
         .tint(.safeTeal)
+        .onAppear { showOnboarding = !onboardingCompleted }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                onboardingCompleted = true
+                showOnboarding = false
+            }
+        }
     }
 }
 
