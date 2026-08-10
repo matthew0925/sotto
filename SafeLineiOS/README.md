@@ -22,12 +22,18 @@ xcodegen generate
 open Sotto.xcodeproj
 ```
 
-Xcodeが開いたら：
-1. プロジェクトナビゲータで`Sotto`ターゲットを選択 →「Signing & Capabilities」タブ
-2. 「Team」に自分のApple IDを選択（`project.yml`には個人のTeam IDを含めていないため、
-   ここは各自で設定が必要です。CODE_SIGN_STYLEはAutomaticにしてあるので、
-   Teamを選べばBundle Identifierの衝突以外は自動で解決されます）
-3. 実機を接続し、スキームのデバイスを選んで ⌘R でビルド・実行
+`project.yml`には`DEVELOPMENT_TEAM`（Team ID）が設定済みなので、Xcodeを開いた時点で
+署名まで自動的に解決されているはずです。実機を接続し、スキームのデバイスを選んで
+⌘R でビルド・実行してください。
+
+**⚠️ このリポジトリを他の人がクローンしてビルドする場合（レビュー依頼など）**：
+`project.yml`内のBundle Identifier（`bundleIdPrefix`と`PRODUCT_BUNDLE_IDENTIFIER`、
+2ターゲット分で計3箇所）とTeam ID（`DEVELOPMENT_TEAM`、2ターゲット分で計2箇所）は
+**元の開発者のApple IDに紐づいているため、そのままでは他の人のApple IDでビルドできません**
+（"cannot be registered to your development team" / "requires a development team" エラーになります）。
+自分でビルドする場合は、この4種類の値をすべて自分のものに書き換えてから
+`xcodegen generate`を実行してください（この書き換えはローカルのみで行い、
+リポジトリにpushし返す必要はありません）。
 
 `project.yml`を編集した場合は、再度`xcodegen generate`を実行すれば`.xcodeproj`に反映されます。
 `.xcodeproj`自体はGit管理していません（`xcodegen generate`で毎回再生成する運用のため）。
