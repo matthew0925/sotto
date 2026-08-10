@@ -303,10 +303,34 @@
   .icon-choice.selected .icon-swatch{border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-dim);}
   .icon-choice span.label{font-size:10px; color:var(--text-dim);}
   .icon-choice.selected span.label{color:var(--teal);}
-  .icon-default{background:linear-gradient(135deg,#20264A,#12172B); color:var(--teal);}
-  .icon-pastel{background:linear-gradient(135deg,#FFD8CE,#CFEFEA); color:#7A5A52;}
-  .icon-mono{background:linear-gradient(135deg,#3A3A3A,#111111); color:#EDEDED;}
-  .icon-minimal{background:#F5F7FA; color:#12172B;}
+  /* Radial "glossy sphere" look, matching the regenerated app icon assets
+     (single motif + soft glow + specular highlight, per current iOS icon
+     design guidance — see SafeLineiOS README §5). */
+  .icon-swatch{background-size:cover;}
+  .icon-default{
+    background:
+      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.55), transparent 30%),
+      radial-gradient(circle at 50% 50%, var(--teal) 32%, transparent 34%),
+      linear-gradient(135deg,#242C54,#0D1122);
+  }
+  .icon-pastel{
+    background:
+      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.7), transparent 30%),
+      radial-gradient(circle at 50% 50%, #8A6257 32%, transparent 34%),
+      linear-gradient(135deg,#FFEEE6,#CFEFEA);
+  }
+  .icon-mono{
+    background:
+      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.6), transparent 30%),
+      radial-gradient(circle at 50% 50%, #F2F2F2 32%, transparent 34%),
+      linear-gradient(135deg,#555558,#0E0E0F);
+  }
+  .icon-minimal{
+    background:
+      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.85), transparent 30%),
+      radial-gradient(circle at 50% 50%, #14192E 32%, transparent 34%),
+      linear-gradient(135deg,#FFFFFF,#E9ECF4);
+  }
 
   /* Fake home-screen grid so the chosen icon can be previewed sitting among others. */
   .home-preview{
@@ -655,19 +679,19 @@
 
     <div class="icon-picker" id="iconPicker">
       <div class="icon-choice selected" data-icon="default" onclick="selectIcon('default', this)">
-        <div class="icon-swatch icon-default">◆</div>
+        <div class="icon-swatch icon-default"></div>
         <span class="label">デフォルト</span>
       </div>
       <div class="icon-choice" data-icon="pastel" onclick="selectIcon('pastel', this)">
-        <div class="icon-swatch icon-pastel">◆</div>
+        <div class="icon-swatch icon-pastel"></div>
         <span class="label">パステル</span>
       </div>
       <div class="icon-choice" data-icon="mono" onclick="selectIcon('mono', this)">
-        <div class="icon-swatch icon-mono">◆</div>
+        <div class="icon-swatch icon-mono"></div>
         <span class="label">モノクロ</span>
       </div>
       <div class="icon-choice" data-icon="minimal" onclick="selectIcon('minimal', this)">
-        <div class="icon-swatch icon-minimal">◆</div>
+        <div class="icon-swatch icon-minimal"></div>
         <span class="label">シンプル</span>
       </div>
     </div>
@@ -1123,10 +1147,10 @@ lockJournal();
 
 // ---------- App icon picker ----------
 const iconStyles = {
-  default: {bg:'linear-gradient(135deg,#20264A,#12172B)', fg:'#2EC4B6'},
-  pastel:  {bg:'linear-gradient(135deg,#FFD8CE,#CFEFEA)', fg:'#7A5A52'},
-  mono:    {bg:'linear-gradient(135deg,#3A3A3A,#111111)', fg:'#EDEDED'},
-  minimal: {bg:'#F5F7FA', fg:'#12172B'}
+  default: 'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.55), transparent 30%), radial-gradient(circle at 50% 50%, #2EC4B6 32%, transparent 34%), linear-gradient(135deg,#242C54,#0D1122)',
+  pastel:  'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.7), transparent 30%), radial-gradient(circle at 50% 50%, #8A6257 32%, transparent 34%), linear-gradient(135deg,#FFEEE6,#CFEFEA)',
+  mono:    'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.6), transparent 30%), radial-gradient(circle at 50% 50%, #F2F2F2 32%, transparent 34%), linear-gradient(135deg,#555558,#0E0E0F)',
+  minimal: 'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.85), transparent 30%), radial-gradient(circle at 50% 50%, #14192E 32%, transparent 34%), linear-gradient(135deg,#FFFFFF,#E9ECF4)'
 };
 // A handful of neutral "other apps" so the selected icon can be judged
 // against a busy, unrelated home screen layout — not just in isolation.
@@ -1154,7 +1178,7 @@ function renderHomePreview(){
   const cells = [];
   dummyApps.forEach((a,i)=>{
     if(i === insertAt){
-      cells.push(`<div><div class="dummy-app" style="background:${style.bg}; display:flex; align-items:center; justify-content:center; color:${style.fg}; font-size:18px;">◆</div><div class="app-label">そっと</div></div>`);
+      cells.push(`<div><div class="dummy-app" style="background:${style};"></div><div class="app-label">そっと</div></div>`);
     }
     cells.push(`<div><div class="dummy-app" style="background:${a.bg};"></div><div class="app-label">${a.label}</div></div>`);
   });

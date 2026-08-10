@@ -119,8 +119,13 @@ App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPre
 表示されたままになります（実際に発生した不具合で、上記の設定追加とアイコン画像4種の
 追加で解消しました）。
 
-現在入っている4種の画像はプレースホルダー（単色グラデーション＋ドット）です。
-実際のブランドデザインに差し替えたい場合は、`SafeLineiOS/SafeLine/Assets.xcassets/`内の
+現在入っている4種の画像は、2026年時点のiOSアイコンデザインの傾向
+（単一の分かりやすいモチーフ・滑らかなグラデーション・光の反射による奥行き表現、
+装飾やテキストを避ける）を踏まえてプログラムで生成した仮素材です
+（Apple公式の"Icon Composer"のような専用デザインツールは使っておらず、
+あくまでその設計思想を再現したものです）。ブランドの世界観に基づいた
+プロによるデザインではないため、本番リリース前に実際のデザイン制作に
+差し替えることを推奨します。差し替える場合は`SafeLineiOS/SafeLine/Assets.xcassets/`内の
 `AppIcon.appiconset` / `IconPastel.appiconset` / `IconMono.appiconset` /
 `IconMinimal.appiconset`それぞれの`icon-1024.png`（アルファチャンネルなしの正方形PNG、
 1024×1024推奨）を差し替えてください。あわせて`*Preview.imageset`内の画像も
