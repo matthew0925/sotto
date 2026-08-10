@@ -107,49 +107,24 @@ SMS送信（`MFMessageComposeViewController`）はUsage Description不要です
   シンプルなど、周囲のアイコン配列・背景に馴染むデザインを選べるだけの機能です。
   アプリ名の表示（「そっと」）はどのアイコンを選んでも変わりません。
 
-## 5. アイコン画像の追加手順（§4のアイコン選択機能に必要）
-このリポジトリにはアイコンの**画像そのもの**は含まれていません（デザインアセットのため）。
-`SettingsView`の選択UIとロジックは動作しますが、実際に切り替わる見た目を持たせるには
-以下をXcode側で用意してください。
+## 5. アイコンの切り替え機能について
+`Assets.xcassets`に`AppIcon` / `IconPastel` / `IconMono` / `IconMinimal`の4つの
+App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPreview`等）を同梱済みです。
+`project.yml`の`ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: "YES"`により、
+これらは自動的に代替アイコンとして登録されます（`CFBundleIcons`/`CFBundleAlternateIcons`を
+手動でInfo.plistに書く必要はありません）。
 
-1. Asset Catalogに、各バリエーションごとの画像セットを追加：
-   `IconPastel` / `IconMono` / `IconMinimal`（既存のデフォルトは`AppIcon`のまま）
-   - iOSの仕様上、アイコンは**アルファチャンネルなしの正方形PNG**（1024×1024推奨）
-2. 同じ名前で、設定画面のプレビュー用に小さいサイズの画像セットも追加：
-   `IconPastelPreview` / `IconMonoPreview` / `IconMinimalPreview`
-   （`AppIconOption.previewAssetName`が参照する名前です。プレビュー画像を用意するまでは
-   選択自体は問題なく動きますが、枠内に絵は表示されません）
-3. Info.plistに以下を追加し、`CFBundleAlternateIcons`にXcodeが自動生成しない場合は
-   手動でキーを追加してください：
+**この設定がないと**、`UIApplication.shared.supportsAlternateIcons`が`false`を返し、
+設定画面のアイコン選択タブが「この端末ではアイコンの切り替えに対応していません」と
+表示されたままになります（実際に発生した不具合で、上記の設定追加とアイコン画像4種の
+追加で解消しました）。
 
-```xml
-<key>CFBundleIcons</key>
-<dict>
-    <key>CFBundlePrimaryIcon</key>
-    <dict>
-        <key>CFBundleIconFiles</key>
-        <array><string>AppIcon</string></array>
-    </dict>
-    <key>CFBundleAlternateIcons</key>
-    <dict>
-        <key>IconPastel</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array><string>IconPastel</string></array>
-        </dict>
-        <key>IconMono</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array><string>IconMono</string></array>
-        </dict>
-        <key>IconMinimal</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array><string>IconMinimal</string></array>
-        </dict>
-    </dict>
-</dict>
-```
+現在入っている4種の画像はプレースホルダー（単色グラデーション＋ドット）です。
+実際のブランドデザインに差し替えたい場合は、`SafeLineiOS/SafeLine/Assets.xcassets/`内の
+`AppIcon.appiconset` / `IconPastel.appiconset` / `IconMono.appiconset` /
+`IconMinimal.appiconset`それぞれの`icon-1024.png`（アルファチャンネルなしの正方形PNG、
+1024×1024推奨）を差し替えてください。あわせて`*Preview.imageset`内の画像も
+同じデザインに更新すると、設定画面のプレビュー表示も一致します。
 
 ## 6. 実装済み（第2弾：見た目の見直し＋機能追加）
 テキストが読みにくいという指摘を受けて配色・文字サイズを見直し、あわせて要望のあった
@@ -215,7 +190,7 @@ SMS送信（`MFMessageComposeViewController`）はUsage Description不要です
 - 相談窓口データの定期更新の仕組み（現状はアプリに同梱したJSONのみ・手動更新）
 - チェックインのバックグラウンド継続性の実機検証（「When In Use」権限のみのため、
   ロック画面が長時間続くと位置更新が止まる制約は上記の通り残っている）
-- アイコン画像アセット自体のデザイン（本README §5の手順でXcode側に追加が必要）
+- アイコン4種の本格的なデザイン（現在はプレースホルダー画像。差し替え手順は本README §5参照）
 - Dynamic Type（文字サイズ設定）への完全対応
 - ウィジェットのライブ更新（チェックイン中の残り時間表示など。App
   Group経由でのデータ共有が必要ですが未実装です）
