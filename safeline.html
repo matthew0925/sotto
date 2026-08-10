@@ -273,6 +273,72 @@
     font-size:10.5px; color:var(--text-dim); opacity:.65; line-height:1.6;
     padding:16px 4px 4px; text-align:center;
   }
+
+  /* ---------- Settings ---------- */
+  .settings-section{margin-bottom:20px;}
+  .settings-section h2{
+    font-family:'Sora',sans-serif; font-size:13.5px; font-weight:700; margin:0 0 6px;
+  }
+  .settings-section .hint{color:var(--text-dim); font-size:11.5px; line-height:1.6; margin:0 0 12px;}
+
+  .segmented{display:flex; gap:6px;}
+  .segmented .seg{
+    flex:1; text-align:center; padding:9px 0; border-radius:10px;
+    border:1px solid var(--line); background:rgba(255,255,255,0.04);
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim);
+    cursor:pointer;
+  }
+  .segmented .seg.active{background:var(--teal-dim); border-color:var(--teal); color:var(--teal); font-weight:600;}
+
+  /* Icon swatches — each represents a possible home-screen icon style,
+     not a disguise: the app name label stays "そっと" in every case. */
+  .icon-picker{display:flex; gap:14px; margin-bottom:16px;}
+  .icon-choice{display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;}
+  .icon-swatch{
+    width:52px; height:52px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid transparent;
+    font-size:20px;
+  }
+  .icon-choice.selected .icon-swatch{border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-dim);}
+  .icon-choice span.label{font-size:10px; color:var(--text-dim);}
+  .icon-choice.selected span.label{color:var(--teal);}
+  .icon-default{background:linear-gradient(135deg,#20264A,#12172B); color:var(--teal);}
+  .icon-pastel{background:linear-gradient(135deg,#FFD8CE,#CFEFEA); color:#7A5A52;}
+  .icon-mono{background:linear-gradient(135deg,#3A3A3A,#111111); color:#EDEDED;}
+  .icon-minimal{background:#F5F7FA; color:#12172B;}
+
+  /* Fake home-screen grid so the chosen icon can be previewed sitting among others. */
+  .home-preview{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    margin-bottom:8px;
+  }
+  .home-preview .dummy-app{
+    aspect-ratio:1; border-radius:13px;
+  }
+  .home-preview .app-label{
+    text-align:center; font-size:8.5px; color:var(--text-dim); margin-top:4px;
+  }
+
+  /* ---------- Journal lock ---------- */
+  .lock-overlay{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:14px; padding:0 24px;
+  }
+  .lock-overlay .lock-icon{font-size:30px;}
+  .lock-overlay p{color:var(--text-dim); font-size:12.5px; line-height:1.6;}
+
+  .danger-btn{
+    background:var(--coral-dim); color:var(--coral); border:none; border-radius:12px;
+    padding:13px 16px; font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px;
+    width:100%; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -351,7 +417,9 @@
     </div>
 
     <button class="btn btn-primary" id="checkinToggle" style="width:100%; padding:14px 0; font-size:14px;" onclick="toggleCheckin()">この内容でチェックインを開始</button>
-    <button class="btn-line" style="width:100%; margin-top:10px; padding:10px 0; border-radius:12px;" onclick="go('home')">戻る</button>
+    <button class="btn" id="sendNowBtn" style="display:none; width:100%; margin-top:10px; padding:12px 0; background:rgba(255,107,91,0.15); color:var(--coral);" onclick="sendCheckinAlertNow()">今すぐ連絡先に知らせる</button>
+    <div class="hero-sub" id="locationStatus" style="margin:10px 0 0; font-size:11.5px; display:flex; align-items:center; gap:6px;"></div>
+    <button class="btn-line" style="width:100%; margin-top:14px; padding:10px 0; border-radius:12px;" onclick="go('home')">戻る</button>
   </div>
 
   <!-- ================= RESOURCES ================= -->
@@ -391,20 +459,81 @@
 
   <!-- ================= JOURNAL ================= -->
   <div class="screen" id="screen-journal">
-    <h1 class="hero">記録（この端末のみ）</h1>
-    <p class="hero-sub">気になったこと、違和感、出来事の日時や状況を残せます。クラウドには送信されません。誰にも見せる必要はありません。</p>
-
-    <div class="field">
-      <label>日時</label>
-      <input type="datetime-local" id="journalDate">
+    <div class="lock-overlay" id="journalLock">
+      <div class="lock-icon">🔒</div>
+      <h1 class="hero" style="margin:0; font-size:18px;">記録はロックされています</h1>
+      <p>本人以外に見られないよう、開く前に確認をお願いします。<br>（このデモではボタンで代用しています）</p>
+      <button class="btn btn-primary" style="padding:12px 20px;" onclick="unlockJournal()">Face ID / パスコードで開く</button>
     </div>
-    <div class="field">
-      <label>メモ</label>
-      <textarea id="journalText" placeholder="場所、状況、相手との関係など、思い出せる範囲で。"></textarea>
-    </div>
-    <button class="btn btn-primary" style="width:100%; padding:13px 0;" onclick="addJournal()">この端末に保存</button>
 
-    <div style="margin-top:24px;" id="journalList"></div>
+    <div id="journalContent" style="display:none;">
+      <h1 class="hero">記録（この端末のみ）</h1>
+      <p class="hero-sub">気になったこと、違和感、出来事の日時や状況を残せます。暗号化してこの端末にのみ保存され、クラウドには送信されません。誰にも見せる必要はありません。</p>
+
+      <div class="field">
+        <label>日時</label>
+        <input type="datetime-local" id="journalDate">
+      </div>
+      <div class="field">
+        <label>メモ</label>
+        <textarea id="journalText" placeholder="場所、状況、相手との関係など、思い出せる範囲で。"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%; padding:13px 0;" onclick="addJournal()">この端末に保存</button>
+
+      <div style="margin-top:24px;" id="journalList"></div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="screen" id="screen-settings">
+    <h1 class="hero">設定</h1>
+    <p class="hero-sub">アカウント登録はしていません。データはこの端末にのみ暗号化して保存され、サーバーには何も送信されません。</p>
+
+    <div class="settings-section">
+      <h2>ホーム画面のアイコン</h2>
+      <p class="hint">ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。偽装ではなく、見た目のバリエーションです。</p>
+      <div class="icon-picker" id="iconPicker">
+        <div class="icon-choice selected" data-icon="default" onclick="selectIcon('default', this)">
+          <div class="icon-swatch icon-default">◆</div>
+          <span class="label">デフォルト</span>
+        </div>
+        <div class="icon-choice" data-icon="pastel" onclick="selectIcon('pastel', this)">
+          <div class="icon-swatch icon-pastel">◆</div>
+          <span class="label">パステル</span>
+        </div>
+        <div class="icon-choice" data-icon="mono" onclick="selectIcon('mono', this)">
+          <div class="icon-swatch icon-mono">◆</div>
+          <span class="label">モノクロ</span>
+        </div>
+        <div class="icon-choice" data-icon="minimal" onclick="selectIcon('minimal', this)">
+          <div class="icon-swatch icon-minimal">◆</div>
+          <span class="label">シンプル</span>
+        </div>
+      </div>
+
+      <p class="hint" style="margin-bottom:8px;">プレビュー：他アプリの中に紛れさせた見え方</p>
+      <div class="home-preview" id="homePreview"></div>
+    </div>
+
+    <div class="settings-section">
+      <h2>見守り中の位置情報 更新間隔</h2>
+      <p class="hint">短くするほど「今すぐ連絡先に知らせる」時の位置がより新しくなりますが、バッテリー消費が増えます。</p>
+      <div class="segmented" id="intervalPicker">
+        <div class="seg" data-sec="30" onclick="selectInterval(30,this)">30秒</div>
+        <div class="seg" data-sec="60" onclick="selectInterval(60,this)">1分</div>
+        <div class="seg active" data-sec="120" onclick="selectInterval(120,this)">2分</div>
+        <div class="seg" data-sec="300" onclick="selectInterval(300,this)">5分</div>
+        <div class="seg" data-sec="600" onclick="selectInterval(600,this)">10分</div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>データの削除</h2>
+      <p class="hint">記録（ジャーナル）と見守り連絡先をこの端末から削除します。加害者などに端末を確認された場合の安全確保のため、確認は1段階のみです。</p>
+      <button class="danger-btn" onclick="eraseAllData()">この端末からすべてのデータを削除</button>
+    </div>
+
+    <button class="btn-line" style="width:100%; margin-top:6px; padding:10px 0; border-radius:12px;" onclick="go('home')">戻る</button>
   </div>
 
   <!-- ================= NAV ================= -->
@@ -425,6 +554,10 @@
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
       記録
     </button>
+    <button class="nav-btn" data-screen="settings" onclick="go('settings')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+      設定
+    </button>
   </div>
 
   <div class="toast" id="toast">🚨 <span id="toastText">信頼できる人に知らせを送りました</span></div>
@@ -437,6 +570,9 @@ function go(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.screen===name));
+  // Re-lock the journal every time the user navigates away from it, same as
+  // the iOS build re-locking on scenePhase leaving .active.
+  if(name !== 'journal') lockJournal();
 }
 
 // ---------- SOS hold-to-activate ----------
@@ -526,6 +662,8 @@ function toggleCheckin(){
     chip.className = 'chip on';
     pill.textContent = '見守り: ON';
     caption.textContent = `${checkinMinutes}分以内に「無事です」を押してください`;
+    document.getElementById('sendNowBtn').style.display = 'block';
+    startLocationTracking();
 
     checkinInterval = setInterval(()=>{
       const remain = Math.max(0, checkinEndAt - Date.now());
@@ -544,16 +682,83 @@ function toggleCheckin(){
     chip.className = 'chip off';
     pill.textContent = '見守り: オフ';
     caption.textContent = '無事のチェックインを受け取りました';
+    document.getElementById('sendNowBtn').style.display = 'none';
+    document.getElementById('locationStatus').textContent = '';
     updateTimerDisplay(checkinMinutes*60);
+    stopLocationTracking();
     showToast('チェックイン完了。今日もお疲れさま。');
   }
+}
+
+function sendCheckinAlertNow(){
+  const contact = document.getElementById('contactInput').value.trim();
+  if(!contact){ showToast('連絡先の電話番号を入力してください'); return; }
+  sendCheckinAlert(contact, false);
 }
 
 function sendCheckinAlert(contact, timedOut){
   const msg = document.getElementById('contactMsg').value || '時間までに連絡が取れませんでした。確認してください。';
   showToast(timedOut ? '⏰ 時間切れ。連絡先にメッセージを送ります。' : '知らせを送ります。');
-  const smsUrl = `sms:${contact}?&body=${encodeURIComponent(msg + '（現在地の共有はお使いの地図アプリからお願いします）')}`;
+  const locationText = lastLocation
+    ? `\n現在地: https://maps.google.com/?q=${lastLocation.lat},${lastLocation.lng}`
+    : '（現在地の共有はお使いの地図アプリからお願いします）';
+  const smsUrl = `sms:${contact}?&body=${encodeURIComponent(msg + locationText)}`;
   setTimeout(()=>{ window.location.href = smsUrl; }, 800);
+}
+
+// ---------- Location tracking during an active check-in ----------
+// Mirrors LocationManager.swift: starts on check-in start, refreshes on the
+// interval chosen in Settings, stops on "無事です". Uses the real browser
+// Geolocation API so this demo can be tested against an actual device fix.
+let locationIntervalSec = 120;
+let locationTimer = null;
+let lastLocation = null;
+let lastLocationAt = null;
+
+function fetchLocationOnce(){
+  if(!navigator.geolocation){
+    document.getElementById('locationStatus').textContent = 'この環境では位置情報を取得できません';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      lastLocation = { lat: pos.coords.latitude.toFixed(5), lng: pos.coords.longitude.toFixed(5) };
+      lastLocationAt = new Date();
+      updateLocationStatus();
+    },
+    err => {
+      document.getElementById('locationStatus').textContent = '位置情報を取得できませんでした（権限を確認してください）';
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+function startLocationTracking(){
+  fetchLocationOnce();
+  clearInterval(locationTimer);
+  locationTimer = setInterval(fetchLocationOnce, locationIntervalSec*1000);
+}
+
+function stopLocationTracking(){
+  clearInterval(locationTimer);
+  locationTimer = null;
+}
+
+function updateLocationStatus(){
+  const el = document.getElementById('locationStatus');
+  if(!lastLocationAt){ el.textContent = '位置情報を取得中…'; return; }
+  const hh = lastLocationAt.getHours().toString().padStart(2,'0');
+  const mm = lastLocationAt.getMinutes().toString().padStart(2,'0');
+  el.textContent = `現在地を ${hh}:${mm} に更新（送信時に自動で添付されます）`;
+}
+
+function selectInterval(sec, el){
+  locationIntervalSec = sec;
+  document.querySelectorAll('#intervalPicker .seg').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  // If a check-in is already running, apply the new cadence immediately
+  // rather than waiting for the next check-in.
+  if(checkinActive) startLocationTracking();
 }
 
 // ---------- Journal (this-device only, in-memory for this demo) ----------
@@ -584,6 +789,76 @@ function addJournal(){
 }
 renderJournal();
 updateTimerDisplay(30*60);
+
+// ---------- Journal lock (Face ID / passcode stand-in) ----------
+let journalUnlocked = false;
+function lockJournal(){
+  journalUnlocked = false;
+  document.getElementById('journalLock').style.display = 'flex';
+  document.getElementById('journalContent').style.display = 'none';
+}
+function unlockJournal(){
+  // Real build: LAContext().evaluatePolicy(.deviceOwnerAuthentication, ...).
+  // This demo just simulates the brief pause of a Face ID scan.
+  showToast('本人確認中…');
+  setTimeout(()=>{
+    journalUnlocked = true;
+    document.getElementById('journalLock').style.display = 'none';
+    document.getElementById('journalContent').style.display = 'block';
+  }, 500);
+}
+lockJournal();
+
+// ---------- App icon picker ----------
+const iconStyles = {
+  default: {bg:'linear-gradient(135deg,#20264A,#12172B)', fg:'#2EC4B6'},
+  pastel:  {bg:'linear-gradient(135deg,#FFD8CE,#CFEFEA)', fg:'#7A5A52'},
+  mono:    {bg:'linear-gradient(135deg,#3A3A3A,#111111)', fg:'#EDEDED'},
+  minimal: {bg:'#F5F7FA', fg:'#12172B'}
+};
+// A handful of neutral "other apps" so the selected icon can be judged
+// against a busy, unrelated home screen layout — not just in isolation.
+const dummyApps = [
+  {bg:'#5B8DEF', label:'メモ'}, {bg:'#F2A65A', label:'天気'},
+  {bg:'#7BC67E', label:'ヘルス'}, {bg:'#E36B6B', label:'カメラ'},
+  {bg:'#9B7EDE', label:'音楽'}, {bg:'#4FB6C9', label:'地図'},
+  {bg:'#D9A441', label:'設定'}
+];
+let selectedIcon = 'default';
+
+function selectIcon(name, el){
+  selectedIcon = name;
+  document.querySelectorAll('#iconPicker .icon-choice').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  renderHomePreview();
+}
+
+function renderHomePreview(){
+  const grid = document.getElementById('homePreview');
+  const style = iconStyles[selectedIcon];
+  const insertAt = 3; // bury "そっと" in the middle of the grid, not first/last
+  const cells = [];
+  dummyApps.forEach((a,i)=>{
+    if(i === insertAt){
+      cells.push(`<div><div class="dummy-app" style="background:${style.bg}; display:flex; align-items:center; justify-content:center; color:${style.fg}; font-size:18px;">◆</div><div class="app-label">そっと</div></div>`);
+    }
+    cells.push(`<div><div class="dummy-app" style="background:${a.bg};"></div><div class="app-label">${a.label}</div></div>`);
+  });
+  grid.innerHTML = cells.join('');
+}
+renderHomePreview();
+
+// ---------- Data erase ----------
+function eraseAllData(){
+  if(!confirm('この端末からすべてのデータを削除しますか？この操作は取り消せません。')) return;
+  journalEntries = [];
+  renderJournal();
+  document.getElementById('contactInput').value = '';
+  document.getElementById('contactMsg').value = '◯◯からの帰り道。時間までに連絡がなければ確認して。';
+  if(checkinActive) toggleCheckin();
+  lockJournal();
+  showToast('この端末のデータを削除しました');
+}
 </script>
 </body>
 </html>
