@@ -20,13 +20,19 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     @Published private(set) var authorizationStatus: CLAuthorizationStatus
 
     private let manager = CLLocationManager()
-    /// Minimum time between accepted fixes — frequent enough to be "close to
-    /// real-time" for a walking pace, without burning battery on a GPS chip
-    /// that's already running at high accuracy.
-    private let minimumUpdateInterval: TimeInterval = 120
     private var isTracking = false
 
+    private static let intervalKey = "sotto.location.updateInterval"
+    /// User-configurable minimum time between accepted fixes (Settingsタブから変更可能).
+    /// Persisted across launches; defaults to 2 minutes. A shorter interval means
+    /// fresher location data at the cost of more battery/GPS radio use.
+    @Published var updateInterval: TimeInterval {
+        didSet { UserDefaults.standard.set(updateInterval, forKey: Self.intervalKey) }
+    }
+
     override init() {
+        let saved = UserDefaults.standard.double(forKey: Self.intervalKey)
+        updateInterval = saved > 0 ? saved : 120
         authorizationStatus = manager.authorizationStatus
         super.init()
         manager.delegate = self
@@ -65,7 +71,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let latest = locations.last else { return }
         if let last = lastUpdated, let previous = lastLocation,
-           Date().timeIntervalSince(last) < minimumUpdateInterval,
+           Date().timeIntervalSince(last) < updateInterval,
            latest.distance(from: previous) < self.manager.distanceFilter {
             return
         }

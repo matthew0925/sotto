@@ -41,12 +41,21 @@ final class CheckInManager: ObservableObject {
 
     private var ticker: Timer?
     private let notificationId = "safeline.checkin.timeout"
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         contactNumber = KeychainStore.getString(Self.contactKey) ?? ""
         contactMessage = KeychainStore.getString(Self.messageKey)
             ?? "◯◯からの帰り道。時間までに連絡がなければ確認して。"
         registerNotificationCategory()
+
+        // Forward LocationManager's own @Published changes so views that only
+        // observe CheckInManager (e.g. CheckInView's location status line,
+        // SettingsView's interval picker) still re-render when a fix or the
+        // interval setting changes.
+        locationManager.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
     private func registerNotificationCategory() {

@@ -9,6 +9,10 @@ struct SettingsView: View {
     @State private var showingEraseConfirm = false
     @State private var didErase = false
 
+    private let intervalOptions: [(label: String, seconds: TimeInterval)] = [
+        ("30秒", 30), ("1分", 60), ("2分", 120), ("5分", 300), ("10分", 600)
+    ]
+
     var body: some View {
         ZStack {
             Color.safeInk.ignoresSafeArea()
@@ -21,6 +25,8 @@ struct SettingsView: View {
                     Text("このアプリはアカウント登録をせず、データはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.6))
+
+                    locationIntervalSection
 
                     Button(role: .destructive) {
                         showingEraseConfirm = true
@@ -59,5 +65,30 @@ struct SettingsView: View {
         } message: {
             Text("この操作は取り消せません。")
         }
+    }
+
+    private var locationIntervalSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("見守り中の位置情報 更新間隔")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white)
+
+            Text("短くするほど「今すぐ連絡先に知らせる」時の位置がより新しくなりますが、バッテリー消費が増えます。")
+                .font(.system(size: 11.5))
+                .foregroundColor(.white.opacity(0.5))
+
+            Picker("更新間隔", selection: Binding(
+                get: { checkInManager.locationManager.updateInterval },
+                set: { checkInManager.locationManager.updateInterval = $0 }
+            )) {
+                ForEach(intervalOptions, id: \.seconds) { option in
+                    Text(option.label).tag(option.seconds)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(14)
     }
 }
