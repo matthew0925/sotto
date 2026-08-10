@@ -306,31 +306,25 @@
   /* Radial "glossy sphere" look, matching the regenerated app icon assets
      (single motif + soft glow + specular highlight, per current iOS icon
      design guidance — see SafeLineiOS README §5). */
-  .icon-swatch{background-size:cover;}
-  .icon-default{
-    background:
-      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.55), transparent 30%),
-      radial-gradient(circle at 50% 50%, var(--teal) 32%, transparent 34%),
-      linear-gradient(135deg,#242C54,#0D1122);
+  /* "Soft 3D / gummi" squircle motif — echoes the OS's own icon shape at
+     smaller scale, single accent color, glossy highlight. Matches the 2026
+     icon-design research behind SafeLineiOS's regenerated app icons. */
+  .icon-swatch{background-size:cover; position:relative; overflow:hidden;}
+  .icon-swatch::after{
+    content:''; position:absolute; left:26%; top:26%; width:48%; height:48%;
+    border-radius:38%;
+    background:var(--motif-color);
+    box-shadow: inset 0 -6px 8px rgba(0,0,0,0.25), 0 4px 8px rgba(0,0,0,0.25);
   }
-  .icon-pastel{
-    background:
-      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.7), transparent 30%),
-      radial-gradient(circle at 50% 50%, #8A6257 32%, transparent 34%),
-      linear-gradient(135deg,#FFEEE6,#CFEFEA);
+  .icon-swatch::before{
+    content:''; position:absolute; left:34%; top:32%; width:26%; height:12%;
+    border-radius:50%; background:rgba(255,255,255,0.75); z-index:1;
+    filter:blur(1.5px);
   }
-  .icon-mono{
-    background:
-      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.6), transparent 30%),
-      radial-gradient(circle at 50% 50%, #F2F2F2 32%, transparent 34%),
-      linear-gradient(135deg,#555558,#0E0E0F);
-  }
-  .icon-minimal{
-    background:
-      radial-gradient(circle at 38% 35%, rgba(255,255,255,0.85), transparent 30%),
-      radial-gradient(circle at 50% 50%, #14192E 32%, transparent 34%),
-      linear-gradient(135deg,#FFFFFF,#E9ECF4);
-  }
+  .icon-default{--motif-color:var(--teal); background:linear-gradient(135deg,#242C54,#0D1122);}
+  .icon-pastel{--motif-color:#9E7266; background:linear-gradient(135deg,#FFEEE6,#CFEFEA);}
+  .icon-mono{--motif-color:#E8E8E8; background:linear-gradient(135deg,#555558,#0E0E0F);}
+  .icon-minimal{--motif-color:#1E243E; background:linear-gradient(135deg,#FFFFFF,#E9ECF4);}
 
   /* Fake home-screen grid so the chosen icon can be previewed sitting among others. */
   .home-preview{
@@ -1146,11 +1140,12 @@ function unlockJournal(){
 lockJournal();
 
 // ---------- App icon picker ----------
-const iconStyles = {
-  default: 'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.55), transparent 30%), radial-gradient(circle at 50% 50%, #2EC4B6 32%, transparent 34%), linear-gradient(135deg,#242C54,#0D1122)',
-  pastel:  'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.7), transparent 30%), radial-gradient(circle at 50% 50%, #8A6257 32%, transparent 34%), linear-gradient(135deg,#FFEEE6,#CFEFEA)',
-  mono:    'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.6), transparent 30%), radial-gradient(circle at 50% 50%, #F2F2F2 32%, transparent 34%), linear-gradient(135deg,#555558,#0E0E0F)',
-  minimal: 'radial-gradient(circle at 38% 35%, rgba(255,255,255,0.85), transparent 30%), radial-gradient(circle at 50% 50%, #14192E 32%, transparent 34%), linear-gradient(135deg,#FFFFFF,#E9ECF4)'
+const iconMotifColors = { default: '#2EC4B6', pastel: '#9E7266', mono: '#E8E8E8', minimal: '#1E243E' };
+const iconBgStyles = {
+  default: 'linear-gradient(135deg,#242C54,#0D1122)',
+  pastel:  'linear-gradient(135deg,#FFEEE6,#CFEFEA)',
+  mono:    'linear-gradient(135deg,#555558,#0E0E0F)',
+  minimal: 'linear-gradient(135deg,#FFFFFF,#E9ECF4)'
 };
 // A handful of neutral "other apps" so the selected icon can be judged
 // against a busy, unrelated home screen layout — not just in isolation.
@@ -1173,12 +1168,13 @@ function selectIcon(name, el){
 
 function renderHomePreview(){
   const grid = document.getElementById('homePreview');
-  const style = iconStyles[selectedIcon];
+  const bg = iconBgStyles[selectedIcon];
+  const motif = iconMotifColors[selectedIcon];
   const insertAt = 3; // bury "そっと" in the middle of the grid, not first/last
   const cells = [];
   dummyApps.forEach((a,i)=>{
     if(i === insertAt){
-      cells.push(`<div><div class="dummy-app" style="background:${style};"></div><div class="app-label">そっと</div></div>`);
+      cells.push(`<div><div class="dummy-app icon-swatch" style="background:${bg}; --motif-color:${motif};"></div><div class="app-label">そっと</div></div>`);
     }
     cells.push(`<div><div class="dummy-app" style="background:${a.bg};"></div><div class="app-label">${a.label}</div></div>`);
   });
