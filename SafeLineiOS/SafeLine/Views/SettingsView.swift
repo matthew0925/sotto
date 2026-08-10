@@ -24,7 +24,7 @@ struct SettingsView: View {
                         .foregroundColor(.white)
 
                     Text("このアプリはアカウント登録をせず、データはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
 
                     appIconSection
@@ -34,8 +34,8 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         showingEraseConfirm = true
                     } label: {
-                        Text("この端末からすべてのデータを削除")
-                            .font(.system(size: 14, weight: .semibold))
+                        Text("この端末のデータをすべて消す")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.safeCoral.opacity(0.15))
@@ -43,20 +43,20 @@ struct SettingsView: View {
                             .cornerRadius(12)
                     }
 
-                    Text("記録（ジャーナル）と見守り連絡先を削除します。進行中のチェックインも停止します。")
-                        .font(.system(size: 11.5))
+                    Text("記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。")
+                        .font(.system(size: 11.5, design: .rounded))
                         .foregroundColor(.white.opacity(0.4))
 
                     if didErase {
                         Text("削除しました。")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.system(size: 12.5, weight: .semibold, design: .rounded))
                             .foregroundColor(.safeTeal)
                     }
                 }
                 .padding(20)
             }
         }
-        .confirmationDialog("この端末からすべてのデータを削除しますか？",
+        .confirmationDialog("この端末のデータをすべて消しますか？",
                              isPresented: $showingEraseConfirm,
                              titleVisibility: .visible) {
             Button("削除する", role: .destructive) {
@@ -73,16 +73,16 @@ struct SettingsView: View {
     private var appIconSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ホーム画面のアイコン")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
 
             Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
-                .font(.system(size: 11.5))
+                .font(.system(size: 11.5, design: .rounded))
                 .foregroundColor(.white.opacity(0.5))
 
             if !iconManager.supportsAlternateIcons {
                 Text("この端末ではアイコンの切り替えに対応していません。")
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 11.5, design: .rounded))
                     .foregroundColor(.white.opacity(0.4))
             } else {
                 HStack(spacing: 12) {
@@ -93,7 +93,7 @@ struct SettingsView: View {
 
                 if let error = iconManager.lastErrorMessage {
                     Text(error)
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, design: .rounded))
                         .foregroundColor(.safeCoral)
                 }
             }
@@ -125,7 +125,7 @@ struct SettingsView: View {
                             .stroke(isSelected ? Color.safeTeal : .clear, lineWidth: 2)
                     )
                 Text(option.displayName)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 10.5, design: .rounded))
                     .foregroundColor(isSelected ? .safeTeal : .white.opacity(0.5))
             }
         }
@@ -134,11 +134,11 @@ struct SettingsView: View {
     private var locationIntervalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("見守り中の位置情報 更新間隔")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
 
-            Text("短くするほど「今すぐ連絡先に知らせる」時の位置がより新しくなりますが、バッテリー消費が増えます。")
-                .font(.system(size: 11.5))
+            Text("短くするほど「今すぐ知らせる」を押したときの位置が新しくなりますが、バッテリー消費が増えます。")
+                .font(.system(size: 11.5, design: .rounded))
                 .foregroundColor(.white.opacity(0.5))
 
             Picker("更新間隔", selection: Binding(

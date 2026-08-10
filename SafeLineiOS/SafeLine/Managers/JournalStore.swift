@@ -112,14 +112,14 @@ final class JournalStore: ObservableObject {
 
     private func save() {
         guard let key = symmetricKey else {
-            lastSaveError = "保存に失敗しました。この端末のセキュリティ設定（パスコード）を確認してください。"
+            lastSaveError = "うまく保存できませんでした。この端末にパスコードが設定されているか確認してみてください。"
             return
         }
         do {
             let plain = try JSONEncoder().encode(entries)
             let sealed = try AES.GCM.seal(plain, using: key)
             guard let combined = sealed.combined else {
-                lastSaveError = "保存に失敗しました。"
+                lastSaveError = "うまく保存できませんでした。"
                 return
             }
             try combined.write(to: fileURL, options: .completeFileProtection)
@@ -131,7 +131,7 @@ final class JournalStore: ObservableObject {
             // than ever persisting plaintext — but tell the user, since
             // `entries` (already updated in memory) will otherwise look saved
             // right up until the app is relaunched and this entry is gone.
-            lastSaveError = "保存に失敗しました。もう一度お試しください。"
+            lastSaveError = "うまく保存できませんでした。もう一度試してみてください。"
         }
     }
 

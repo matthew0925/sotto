@@ -17,8 +17,8 @@ struct CheckInView: View {
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
 
-                    Text("一人になる予定がある時間の前にセットしておくと、時間内に「無事です」を押さない限り、指定した連絡先に知らせる準備ができます。")
-                        .font(.system(size: 13))
+                    Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
+                        .font(.system(size: 13, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
 
                     timerDisplay
@@ -31,21 +31,21 @@ struct CheckInView: View {
                     .opacity(manager.isActive ? 0.4 : 1)
                     .disabled(manager.isActive)
 
-                    field(title: "知らせる相手（電話番号）") {
+                    field(title: "知らせたい人（電話番号）") {
                         TextField("090-1234-5678", text: $manager.contactNumber)
                             .keyboardType(.phonePad)
                     }
                     .disabled(manager.isActive)
 
-                    field(title: "送るメッセージ") {
+                    field(title: "伝えたいメッセージ") {
                         TextEditor(text: $manager.contactMessage)
                             .frame(height: 70)
                     }
                     .disabled(manager.isActive)
 
                     Button(action: primaryAction) {
-                        Text(manager.isActive ? "無事です（チェックインを完了）" : "この内容でチェックインを開始")
-                            .font(.system(size: 14, weight: .semibold))
+                        Text(manager.isActive ? "無事です（見守りを終える）" : "この内容で見守りをはじめる")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.safeTeal)
@@ -57,8 +57,8 @@ struct CheckInView: View {
                         Button {
                             showingMessageComposer = true
                         } label: {
-                            Text("今すぐ連絡先に知らせる")
-                                .font(.system(size: 13, weight: .semibold))
+                            Text("今すぐ知らせる")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Color.safeCoral.opacity(0.15))
@@ -97,23 +97,23 @@ struct CheckInView: View {
     private var locationStatus: some View {
         HStack(spacing: 6) {
             Image(systemName: "location.fill")
-                .font(.system(size: 11))
+                .font(.system(size: 11, design: .rounded))
             Text(locationStatusText)
-                .font(.system(size: 11.5))
+                .font(.system(size: 11.5, design: .rounded))
         }
         .foregroundColor(.white.opacity(0.45))
     }
 
     private var locationStatusText: String {
         if manager.locationManager.isPermissionDenied {
-            return "位置情報の利用が許可されていません。設定アプリから許可すると、送信時に現在地が添付されます。"
+            return "現在地の共有はまだ許可されていません。設定から許可すると、知らせと一緒に現在地もそっと届けられます。"
         }
         guard let updated = manager.locationManager.lastUpdated else {
-            return "位置情報を取得中…"
+            return "現在地を確認しています…"
         }
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return "現在地を \(formatter.string(from: updated)) に更新（送信時に自動で添付されます）"
+        return "現在地を \(formatter.string(from: updated)) ごろ確認しました（知らせと一緒に届きます）"
     }
 
     private var timerDisplay: some View {
@@ -121,8 +121,8 @@ struct CheckInView: View {
             Text(formatted(manager.isActive ? manager.remainingSeconds : TimeInterval(selectedMinutes * 60)))
                 .font(.system(size: 52, weight: .semibold, design: .monospaced))
                 .foregroundColor(.white)
-            Text(manager.isActive ? "\(Int(manager.remainingSeconds/60))分以内に「無事です」を押してください" : "タイマー未開始")
-                .font(.system(size: 12.5))
+            Text(manager.isActive ? "\(Int(manager.remainingSeconds/60))分以内に「無事です」を教えてください" : "まだ何も始まっていません")
+                .font(.system(size: 12.5, design: .rounded))
                 .foregroundColor(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
@@ -148,7 +148,7 @@ struct CheckInView: View {
 
     private func field<V: View>(title: String, @ViewBuilder content: () -> V) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 12)).foregroundColor(.white.opacity(0.5))
+            Text(title).font(.system(size: 12, design: .rounded)).foregroundColor(.white.opacity(0.5))
             content()
                 .padding(10)
                 .background(Color.white.opacity(0.05))
@@ -183,13 +183,13 @@ struct SMSUnavailableView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 30))
+                .font(.system(size: 30, design: .rounded))
                 .foregroundColor(.safeCoral)
-            Text("この端末ではメッセージを送信できません")
-                .font(.system(size: 16, weight: .bold))
+            Text("メッセージを送ることができませんでした")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
-            Text("代わりに、登録した連絡先に直接電話をかけられます。")
-                .font(.system(size: 13))
+            Text("かわりに、電話でつながることができます。")
+                .font(.system(size: 13, design: .rounded))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -199,8 +199,8 @@ struct SMSUnavailableView: View {
                     UIApplication.shared.open(url)
                     dismiss()
                 } label: {
-                    Text("この連絡先に電話をかける")
-                        .font(.system(size: 14, weight: .semibold))
+                    Text("電話でつながる")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .padding(.horizontal, 24)
                         .padding(.vertical, 13)
                         .background(Color.safeTeal)

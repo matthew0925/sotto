@@ -18,7 +18,7 @@ struct HomeView: View {
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     Text("外出中でも、家の中でも。長押しで、迷わず助けを呼べます。")
-                        .font(.system(size: 13.5))
+                        .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -29,7 +29,7 @@ struct HomeView: View {
                     .padding(.top, 12)
 
                 Text("押している間だけ発信準備が進みます。離せば止まります。")
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundColor(.white.opacity(0.5))
 
                 Spacer()
@@ -70,8 +70,8 @@ struct HomeView: View {
                     VStack(spacing: 4) {
                         Text("長押しでSOS")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
-                        Text("HOLD 1.5秒")
-                            .font(.system(size: 11, weight: .medium))
+                        Text("1.5秒、ゆっくり長押し")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
                             .opacity(0.75)
                     }
                     .foregroundColor(Color(red: 0.16, green: 0.04, blue: 0.02))
@@ -123,10 +123,10 @@ struct HomeView: View {
     private func quickCard(title: String, desc: String, actionTitle: String, action: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.system(size: 14.5, weight: .bold, design: .rounded)).foregroundColor(.white)
-            Text(desc).font(.system(size: 12.5)).foregroundColor(.white.opacity(0.6))
+            Text(desc).font(.system(size: 12.5, design: .rounded)).foregroundColor(.white.opacity(0.6))
             Button(action: action) {
                 Text(actionTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
                     .background(Color.safeTeal)
