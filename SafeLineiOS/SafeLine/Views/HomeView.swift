@@ -4,7 +4,6 @@ import SwiftUI
 /// the user already knows, often indoors, not just "walking home alone at night".
 /// So this button must be reachable the instant the app opens, in any context.
 struct HomeView: View {
-    @EnvironmentObject var checkInManager: CheckInManager
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     private let holdDuration: TimeInterval = 1.5
@@ -117,7 +116,7 @@ struct HomeView: View {
     }
 
     private func callNumber(_ number: String) {
-        guard let url = URL(string: "tel://\(number)") else { return }
+        guard let url = URL(string: "tel:\(number)") else { return }
         UIApplication.shared.open(url)
     }
 

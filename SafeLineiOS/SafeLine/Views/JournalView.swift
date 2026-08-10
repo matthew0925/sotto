@@ -17,7 +17,7 @@ struct JournalView: View {
             }
         }
         .onAppear { lock.authenticate() }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             if phase != .active { lock.lock() }
         }
     }

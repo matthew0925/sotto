@@ -10,7 +10,7 @@ struct SupportResource: Codable, Identifiable {
 
     var actionURL: URL? {
         switch type {
-        case "tel": return URL(string: "tel://\(value)")
+        case "tel": return URL(string: "tel:\(value)")
         case "url": return URL(string: value)
         default: return nil
         }

@@ -111,7 +111,13 @@ final class CheckInManager: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = "チェックインの時間になりました"
         content.body = "無事なら「無事です」を、連絡できない状況なら「連絡先に知らせる」をタップしてください。"
-        content.sound = .defaultCritical
+        // .defaultCritical requires Apple's separate Critical Alerts entitlement
+        // (com.apple.developer.usernotifications.critical-alerts), which is granted
+        // only after an individual request/justification to Apple and is unlikely
+        // to be approved for a first submission. Using it without the entitlement
+        // just silently falls back to a normal sound, so default here to avoid the
+        // false impression that this notification bypasses Silent/Focus mode.
+        content.sound = .default
         content.categoryIdentifier = Self.timeoutCategoryId
         content.userInfo = ["contact": contactNumber, "message": contactMessage]
 

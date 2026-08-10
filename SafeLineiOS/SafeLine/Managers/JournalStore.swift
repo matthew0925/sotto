@@ -24,16 +24,28 @@ final class JournalStore: ObservableObject {
 
     private static let keychainKey = "sotto.journal.key"
 
-    private lazy var symmetricKey: SymmetricKey = {
+    // Not `lazy var` on purpose: eraseAll() needs to force a fresh key to be
+    // generated (and persisted) on the very next save, not reuse whatever key
+    // happened to already be cached in memory. A `lazy var` has no supported
+    // way to be "un-cached", which previously meant that adding an entry right
+    // after erasing would silently encrypt it with a key that no longer existed
+    // in the Keychain — unrecoverable on the next app launch.
+    private var cachedSymmetricKey: SymmetricKey?
+
+    private var symmetricKey: SymmetricKey {
+        if let cachedSymmetricKey { return cachedSymmetricKey }
+        let key: SymmetricKey
         if let data = KeychainStore.get(Self.keychainKey) {
-            return SymmetricKey(data: data)
+            key = SymmetricKey(data: data)
+        } else {
+            key = SymmetricKey(size: .bits256)
+            let keyData = key.withUnsafeBytes { Data($0) }
+            KeychainStore.set(keyData, for: Self.keychainKey,
+                               accessible: kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly)
         }
-        let newKey = SymmetricKey(size: .bits256)
-        let keyData = newKey.withUnsafeBytes { Data($0) }
-        KeychainStore.set(keyData, for: Self.keychainKey,
-                           accessible: kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly)
-        return newKey
-    }()
+        cachedSymmetricKey = key
+        return key
+    }
 
     init() {
         load()
@@ -58,6 +70,7 @@ final class JournalStore: ObservableObject {
         entries = []
         try? FileManager.default.removeItem(at: fileURL)
         KeychainStore.delete(Self.keychainKey)
+        cachedSymmetricKey = nil
     }
 
     private func load() {

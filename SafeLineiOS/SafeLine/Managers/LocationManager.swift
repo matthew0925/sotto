@@ -79,7 +79,19 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         lastUpdated = Date()
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        lastErrorMessage = error.localizedDescription
+    }
+
+    /// Surfaced so CheckInView can stop showing "取得中…" forever when the user
+    /// has denied location access — previously a silent failure with no UI signal.
+    @Published private(set) var lastErrorMessage: String?
+
+    /// True once we know for certain updates cannot happen (as opposed to
+    /// `.notDetermined`, which just means the prompt hasn't been answered yet).
+    var isPermissionDenied: Bool {
+        authorizationStatus == .denied || authorizationStatus == .restricted
+    }
 
     /// Best available fix, formatted for dropping straight into an SMS body.
     var mapsLink: String? {

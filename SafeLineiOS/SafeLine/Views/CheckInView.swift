@@ -79,7 +79,7 @@ struct CheckInView: View {
                                      mapsLink: manager.locationManager.mapsLink)
             }
         }
-        .onChange(of: manager.wantsToSendAlert) { _, wants in
+        .onChange(of: manager.wantsToSendAlert) { wants in
             if wants {
                 showingMessageComposer = true
                 manager.wantsToSendAlert = false
@@ -98,6 +98,9 @@ struct CheckInView: View {
     }
 
     private var locationStatusText: String {
+        if manager.locationManager.isPermissionDenied {
+            return "位置情報の利用が許可されていません。設定アプリから許可すると、送信時に現在地が添付されます。"
+        }
         guard let updated = manager.locationManager.lastUpdated else {
             return "位置情報を取得中…"
         }
