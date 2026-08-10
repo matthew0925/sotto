@@ -77,6 +77,13 @@ struct CheckInView: View {
                 MessageComposerView(recipient: manager.contactNumber,
                                      body: manager.contactMessage,
                                      mapsLink: manager.locationManager.mapsLink)
+            } else {
+                // This device can't compose SMS at all (no SIM/carrier plan,
+                // Messages disabled, etc.) — previously this just presented an
+                // empty sheet with no explanation and no way forward, which is
+                // unacceptable for what's meant to be the emergency path.
+                // Offer an immediate fallback instead of a dead end.
+                SMSUnavailableView(contactNumber: manager.contactNumber)
             }
         }
         .onChange(of: manager.wantsToSendAlert) { wants in
@@ -163,6 +170,46 @@ struct CheckInView: View {
         let m = Int(seconds) / 60
         let s = Int(seconds) % 60
         return String(format: "%02d:%02d", m, s)
+    }
+}
+
+/// Fallback shown in place of MessageComposerView when this device can't
+/// compose SMS at all. Always offers a phone call as a next step rather than
+/// leaving the user at a dead end during what may be an emergency.
+struct SMSUnavailableView: View {
+    let contactNumber: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 30))
+                .foregroundColor(.safeCoral)
+            Text("この端末ではメッセージを送信できません")
+                .font(.system(size: 16, weight: .bold))
+                .multilineTextAlignment(.center)
+            Text("代わりに、登録した連絡先に直接電話をかけられます。")
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            if !contactNumber.isEmpty, let url = URL(string: "tel:\(contactNumber)") {
+                Button {
+                    UIApplication.shared.open(url)
+                    dismiss()
+                } label: {
+                    Text("この連絡先に電話をかける")
+                        .font(.system(size: 14, weight: .semibold))
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 13)
+                        .background(Color.safeTeal)
+                        .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
+                        .cornerRadius(12)
+                }
+            }
+        }
+        .padding(24)
     }
 }
 

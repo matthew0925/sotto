@@ -16,6 +16,12 @@ struct JournalEntry: Identifiable, Codable {
 /// remain as a second layer under the encryption.
 final class JournalStore: ObservableObject {
     @Published private(set) var entries: [JournalEntry] = []
+    /// Set whenever the most recent add/delete failed to persist to disk — the
+    /// in-memory `entries` array is still updated optimistically (so the user
+    /// sees their entry immediately), but silently losing that on the next
+    /// launch without telling anyone would be worse than an ugly error banner.
+    /// JournalView surfaces this.
+    @Published private(set) var lastSaveError: String?
 
     private let fileURL: URL = {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -32,16 +38,25 @@ final class JournalStore: ObservableObject {
     // in the Keychain — unrecoverable on the next app launch.
     private var cachedSymmetricKey: SymmetricKey?
 
-    private var symmetricKey: SymmetricKey {
+    /// Returns nil if a key isn't already in the Keychain AND we failed to
+    /// persist a newly generated one (e.g. SecItemAdd rejected it because the
+    /// device has no passcode set, or some other Keychain error). Callers must
+    /// treat nil as "cannot save right now" rather than falling back to an
+    /// unpersisted, in-memory-only key — encrypting with a key that was never
+    /// actually written to the Keychain would make that data permanently
+    /// unrecoverable the moment the process exits.
+    private var symmetricKey: SymmetricKey? {
         if let cachedSymmetricKey { return cachedSymmetricKey }
-        let key: SymmetricKey
         if let data = KeychainStore.get(Self.keychainKey) {
-            key = SymmetricKey(data: data)
-        } else {
-            key = SymmetricKey(size: .bits256)
-            let keyData = key.withUnsafeBytes { Data($0) }
-            KeychainStore.set(keyData, for: Self.keychainKey,
-                               accessible: kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly)
+            let key = SymmetricKey(data: data)
+            cachedSymmetricKey = key
+            return key
+        }
+        let key = SymmetricKey(size: .bits256)
+        let keyData = key.withUnsafeBytes { Data($0) }
+        guard KeychainStore.set(keyData, for: Self.keychainKey,
+                                 accessible: kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly) else {
+            return nil
         }
         cachedSymmetricKey = key
         return key
@@ -75,9 +90,16 @@ final class JournalStore: ObservableObject {
 
     private func load() {
         guard let sealed = try? Data(contentsOf: fileURL) else { return }
+        guard let key = symmetricKey else {
+            // No usable key at all (Keychain unavailable) — fail closed rather
+            // than crash or leak plaintext. There's nothing to show the user
+            // here since this runs at launch, before any view is visible.
+            entries = []
+            return
+        }
         do {
             let box = try AES.GCM.SealedBox(combined: sealed)
-            let decrypted = try AES.GCM.open(box, using: symmetricKey)
+            let decrypted = try AES.GCM.open(box, using: key)
             entries = try JSONDecoder().decode([JournalEntry].self, from: decrypted)
                 .sorted { $0.date > $1.date }
         } catch {
@@ -89,16 +111,27 @@ final class JournalStore: ObservableObject {
     }
 
     private func save() {
+        guard let key = symmetricKey else {
+            lastSaveError = "保存に失敗しました。この端末のセキュリティ設定（パスコード）を確認してください。"
+            return
+        }
         do {
             let plain = try JSONEncoder().encode(entries)
-            let sealed = try AES.GCM.seal(plain, using: symmetricKey)
-            guard let combined = sealed.combined else { return }
+            let sealed = try AES.GCM.seal(plain, using: key)
+            guard let combined = sealed.combined else {
+                lastSaveError = "保存に失敗しました。"
+                return
+            }
             try combined.write(to: fileURL, options: .completeFileProtection)
             applyFileProtection()
             excludeFromBackup()
+            lastSaveError = nil
         } catch {
-            // If sealing fails for any reason, skip the write rather than ever
-            // persisting plaintext.
+            // If sealing/writing fails for any reason, skip the write rather
+            // than ever persisting plaintext — but tell the user, since
+            // `entries` (already updated in memory) will otherwise look saved
+            // right up until the app is relaunched and this entry is gone.
+            lastSaveError = "保存に失敗しました。もう一度お試しください。"
         }
     }
 

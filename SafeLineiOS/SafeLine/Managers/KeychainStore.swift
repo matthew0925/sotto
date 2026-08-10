@@ -5,8 +5,9 @@ import Security
 /// the check-in contact/message, and the journal's AES key.
 /// `.whenUnlockedThisDeviceOnly` keeps values off iCloud Keychain sync.
 enum KeychainStore {
+    @discardableResult
     static func set(_ data: Data, for key: String,
-                     accessible: CFString = kSecAttrAccessibleWhenUnlockedThisDeviceOnly) {
+                     accessible: CFString = kSecAttrAccessibleWhenUnlockedThisDeviceOnly) -> Bool {
         delete(key)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -14,7 +15,7 @@ enum KeychainStore {
             kSecValueData as String: data,
             kSecAttrAccessible as String: accessible
         ]
-        SecItemAdd(query as CFDictionary, nil)
+        return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
     }
 
     static func get(_ key: String) -> Data? {
@@ -38,7 +39,8 @@ enum KeychainStore {
         SecItemDelete(query as CFDictionary)
     }
 
-    static func setString(_ value: String, for key: String) {
+    @discardableResult
+    static func setString(_ value: String, for key: String) -> Bool {
         set(Data(value.utf8), for: key)
     }
 

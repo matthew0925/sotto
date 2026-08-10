@@ -75,7 +75,12 @@ struct JournalView: View {
                 Button {
                     guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                     store.add(text: text, date: date)
-                    text = ""
+                    // Only clear the input if the save actually succeeded —
+                    // if it failed, leave the text in place so nothing typed
+                    // is lost and the user can retry immediately.
+                    if store.lastSaveError == nil {
+                        text = ""
+                    }
                 } label: {
                     Text("この端末に保存")
                         .font(.system(size: 14, weight: .semibold))
@@ -84,6 +89,12 @@ struct JournalView: View {
                         .background(Color.safeTeal)
                         .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
                         .cornerRadius(12)
+                }
+
+                if let saveError = store.lastSaveError {
+                    Text("⚠️ \(saveError)")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundColor(.safeCoral)
                 }
 
                 if store.entries.isEmpty {

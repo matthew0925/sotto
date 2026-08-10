@@ -39,13 +39,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                  didReceive response: UNNotificationResponse,
                                  withCompletionHandler completionHandler: @escaping () -> Void) {
-        switch response.actionIdentifier {
-        case CheckInManager.safeActionId:
-            checkInManager.markSafe()
-        case CheckInManager.sendActionId:
-            checkInManager.requestSendAlert()
-        default:
-            break
+        // UNUserNotificationCenterDelegate callbacks are not documented to
+        // arrive on the main thread. checkInManager's @Published properties
+        // must only be mutated on main — this is the "無事です" /
+        // "連絡先に知らせる" path, the two most safety-critical actions in
+        // the app, so this dispatch is not optional polish.
+        DispatchQueue.main.async { [checkInManager] in
+            switch response.actionIdentifier {
+            case CheckInManager.safeActionId:
+                checkInManager.markSafe()
+            case CheckInManager.sendActionId:
+                checkInManager.requestSendAlert()
+            default:
+                break
+            }
         }
         completionHandler()
     }
