@@ -9,7 +9,7 @@ struct ResourcesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("相談窓口")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                     Text("一人で抱え込まなくていい場所です。年齢・性別を問わず相談できます。あなたは悪くありません。")
                         .font(.system(size: 13, design: .rounded))
@@ -23,7 +23,7 @@ struct ResourcesView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(resource.title)
-                                    .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                                     .foregroundColor(.white)
                                 Text(resource.desc)
                                     .font(.system(size: 12.5, design: .rounded))

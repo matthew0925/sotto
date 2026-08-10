@@ -15,7 +15,7 @@ struct HomeView: View {
             VStack(spacing: 28) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("いつでも、押せる場所を。")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                     Text("外出中でも、家の中でも。長押しで、迷わず助けを呼べます。")
                         .font(.system(size: 13.5, design: .rounded))
@@ -69,7 +69,7 @@ struct HomeView: View {
                 .overlay(
                     VStack(spacing: 4) {
                         Text("長押しでSOS")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
                         Text("1.5秒、ゆっくり長押し")
                             .font(.system(size: 11, weight: .medium, design: .rounded))
                             .opacity(0.75)
@@ -122,7 +122,7 @@ struct HomeView: View {
 
     private func quickCard(title: String, desc: String, actionTitle: String, action: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 14.5, weight: .bold, design: .rounded)).foregroundColor(.white)
+            Text(title).font(.system(size: 14.5, weight: .semibold, design: .rounded)).foregroundColor(.white)
             Text(desc).font(.system(size: 12.5, design: .rounded)).foregroundColor(.white.opacity(0.6))
             Button(action: action) {
                 Text(actionTitle)

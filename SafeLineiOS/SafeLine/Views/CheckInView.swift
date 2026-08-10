@@ -14,7 +14,7 @@ struct CheckInView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("見守りチェックイン")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
 
                     Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
@@ -186,7 +186,7 @@ struct SMSUnavailableView: View {
                 .font(.system(size: 30, design: .rounded))
                 .foregroundColor(.safeCoral)
             Text("メッセージを送ることができませんでした")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .multilineTextAlignment(.center)
             Text("かわりに、電話でつながることができます。")
                 .font(.system(size: 13, design: .rounded))
