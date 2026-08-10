@@ -1,0 +1,39 @@
+name: Sotto
+options:
+  bundleIdPrefix: com.sotto
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  Sotto:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: SafeLine
+    info:
+      path: Generated-Info.plist
+      properties:
+        CFBundleDisplayName: そっと
+        # Required for CheckInManager's check-in location tracking.
+        NSLocationWhenInUseUsageDescription: 見守りチェックイン中に、現在地を信頼できる連絡先へ共有するために使用します。
+        # Required for JournalLock's Face ID gate on the journal screen.
+        NSFaceIDUsageDescription: 記録（ジャーナル）を本人以外に見られないよう、Face IDで保護するために使用します。
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sotto.app
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    scheme:
+      gatherCoverageData: false

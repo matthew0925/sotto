@@ -3,12 +3,45 @@
 アプリ名は「そっと」に決定。ホーム画面のアイコン下に表示されても
 用途が特定されにくいよう、あえて汎用的な言葉を採用しています。
 
-## 1. Xcodeプロジェクトの作成
+## 1. Xcodeプロジェクトの作成（XcodeGenを使う方法・推奨）
+
+このリポジトリには`project.yml`（[XcodeGen](https://github.com/yonaskolb/XcodeGen)の設定ファイル）が
+含まれています。手動でXcodeプロジェクトを作ってファイルをコピーする必要はなく、
+1コマンドで`.xcodeproj`が生成されます。Info.plistの必須キー（位置情報・Face ID）や
+Bundle Identifier、Display Nameもこのファイルに定義済みです。
+
+```bash
+# 初回のみ（Homebrewが入っていればこの1行）
+brew install xcodegen
+
+# SafeLineiOS ディレクトリで実行
+cd SafeLineiOS
+xcodegen generate
+
+# 生成された Sotto.xcodeproj を開く
+open Sotto.xcodeproj
+```
+
+Xcodeが開いたら：
+1. プロジェクトナビゲータで`Sotto`ターゲットを選択 →「Signing & Capabilities」タブ
+2. 「Team」に自分のApple IDを選択（`project.yml`には個人のTeam IDを含めていないため、
+   ここは各自で設定が必要です。CODE_SIGN_STYLEはAutomaticにしてあるので、
+   Teamを選べばBundle Identifierの衝突以外は自動で解決されます）
+3. 実機を接続し、スキームのデバイスを選んで ⌘R でビルド・実行
+
+`project.yml`を編集した場合は、再度`xcodegen generate`を実行すれば`.xcodeproj`に反映されます。
+`.xcodeproj`自体はGit管理していません（`xcodegen generate`で毎回再生成する運用のため）。
+
+`Assets.xcassets`にはAppIcon・AccentColorのプレースホルダーのみ入っています
+（実際のアイコン画像は§5参照）。デバッグ実行には支障ありませんが、
+App Store提出には実際の1024×1024アイコン画像が必要です。
+
+### 代替：手動でXcodeプロジェクトを作る場合
+XcodeGenを使わない場合は、以下の手順でも構築できます。
 1. Xcode →「Create New Project」→「App」
 2. Product Name: `Sotto`（英数字のみ推奨。日本語名は次の手順でDisplay Nameとして設定）、
    Interface: SwiftUI、Language: Swift
-3. 作成後、`SafeLine/`フォルダの中身（このzipの`SafeLine/`以下）を、
-   Xcodeが自動生成した同名フォルダに **上書き** してください
+3. 作成後、`SafeLine/`フォルダの中身を、Xcodeが自動生成した同名フォルダに **上書き** してください
    （`ContentView.swift`と`SafeLineApp.swift`は既存ファイルを置き換える形になります。
    フォルダ名・Swiftの構造体名`SafeLineApp`は内部識別子なので、そのままでも動作に支障はありません）
 4. ホーム画面に表示される名前を「そっと」にするには、Target →「General」→
@@ -17,8 +50,9 @@
    Target Membershipにチェックが入っていることを確認してください（Bundleに含める必要があります）
 
 ## 2. Info.plist に追加が必要な項目
-チェックイン中の位置情報取得と、ジャーナルのFace ID/パスコードロックのため、
-以下2つのUsage Descriptionが**必須**です（未設定だと該当機能の呼び出しでクラッシュします）。
+**XcodeGenで生成した場合は`project.yml`に既に定義済みなので、この節の作業は不要です。**
+手動でXcodeプロジェクトを作った場合のみ、以下2つのUsage Descriptionを追加してください
+（未設定だと該当機能の呼び出しでクラッシュします）。
 
 ```xml
 <key>NSLocationWhenInUseUsageDescription</key>

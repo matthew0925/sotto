@@ -1,0 +1,9 @@
+# Xcode / XcodeGen
+SafeLineiOS/*.xcodeproj
+SafeLineiOS/Generated-Info.plist
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# macOS
+.DS_Store
