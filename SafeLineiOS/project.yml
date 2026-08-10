@@ -55,9 +55,25 @@ targets:
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: "YES"
     scheme:
       gatherCoverageData: false
+      testTargets:
+        - SottoTests
     dependencies:
       - target: SottoWidgetExtension
         embed: true
+
+  SottoTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: SottoTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: T8VDXZYND7
+    dependencies:
+      - target: Sotto
 
   SottoWidgetExtension:
     type: app-extension
