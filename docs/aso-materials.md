@@ -78,7 +78,7 @@ Face ID・パスコードで守られているので、誰にも見せなくて�
 
 ## スクリーンショット構成案（5枚、iPhone 6.7インチ想定）
 
-実機ビルド後、以下の5画面をキャプチャしてください（`safeline.html`のプロトタイプで構図・文言は確認済み）。各画面に短いキャッチコピーを載せる場合の案も添えます。
+実機ビルド後、以下の5画面をキャプチャしてください（`prototype/safeline.html`のプロトタイプで構図・文言は確認済み）。各画面に短いキャッチコピーを載せる場合の案も添えます。
 
 | # | 画面 | キャッチコピー案 |
 |---|---|---|
@@ -129,7 +129,7 @@ iOS標準のMFMessageComposeViewController（メッセージ作成画面）とte
 ---
 
 ## App Store Connect 入力欄チェックリスト
-- [ ] プライバシーポリシーURL：`https://matthew0925.github.io/sotto/privacy-policy.html`（GitHub Pages有効化後）
+- [ ] プライバシーポリシーURL：`https://matthew0925.github.io/sotto/docs/privacy-policy.html`（GitHub Pages有効化後）
 - [ ] サポートURL：（要準備。GitHub Pagesの別ページ、またはREADME等で代用可）
 - [ ] 年齢制限（Age Rating）：暴力・性的テーマに関する質問があるため、内容を正直に申告（相談窓口情報や性暴力関連の説明文を含むため17+相当になる可能性が高い）
 - [ ] App Privacy（データ取り扱いの申告）：「データを収集しません」で申告可能な設計（位置情報も送信せず端末内処理のため）
