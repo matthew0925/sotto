@@ -22,9 +22,33 @@ struct ContentView: View {
     }
 }
 
+/// All tokens below are backed by Asset Catalog color sets with separate
+/// light/dark values (see Assets.xcassets) so the app follows the system
+/// appearance automatically. Text tokens deliberately use higher contrast
+/// than the original fixed-opacity-white scheme, which read as too faint
+/// against the dark background (a real "text is hard to read" report).
 extension Color {
-    // Matches the visual language of the web prototype (calm ink/teal, coral for urgency).
-    static let safeInk = Color(red: 0x12/255, green: 0x17/255, blue: 0x2B/255)
-    static let safeTeal = Color(red: 0x2E/255, green: 0xC4/255, blue: 0xB6/255)
-    static let safeCoral = Color(red: 0xFF/255, green: 0x6B/255, blue: 0x5B/255)
+    static let safeInk = Color("Ink")
+    static let safeTeal = Color("Teal")
+    static let safeCoral = Color("Coral")
+
+    /// Primary body/heading text.
+    static let safeText = Color("TextPrimary")
+    /// Secondary text — descriptions, field labels. Higher contrast than the
+    /// old `.white.opacity(0.6)` it replaces.
+    static let safeTextDim = Color("TextSecondary")
+    /// Tertiary/hint text — placeholders, timestamps, empty states.
+    static let safeTextFaint = Color("TextTertiary")
+
+    /// Subtle fill for cards, inputs, inactive controls.
+    static let safeCardFill = Color("CardFill")
+    /// Slightly stronger fill for nested/selected surfaces.
+    static let safeCardFillStrong = Color("CardFillStrong")
+    /// Hairline borders/dividers.
+    static let safeBorder = Color("Border")
+
+    /// Dark text used on top of bright teal/coral filled buttons — stays
+    /// constant across both themes since those accent colors are always
+    /// bright enough to need dark text on them.
+    static let safeOnAccent = Color(red: 0.02, green: 0.13, blue: 0.12)
 }

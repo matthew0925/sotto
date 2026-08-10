@@ -21,11 +21,11 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("設定")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.safeText)
 
                     Text("このアプリはアカウント登録をせず、データはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 14.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
 
                     appIconSection
 
@@ -35,7 +35,7 @@ struct SettingsView: View {
                         showingEraseConfirm = true
                     } label: {
                         Text("この端末のデータをすべて消す")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.safeCoral.opacity(0.15))
@@ -44,12 +44,12 @@ struct SettingsView: View {
                     }
 
                     Text("記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。")
-                        .font(.system(size: 11.5, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundColor(.safeTextFaint)
 
                     if didErase {
                         Text("削除しました。")
-                            .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.safeTeal)
                     }
                 }
@@ -73,17 +73,17 @@ struct SettingsView: View {
     private var appIconSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ホーム画面のアイコン")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                .foregroundColor(.safeText)
 
             Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
-                .font(.system(size: 11.5, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .font(.system(size: 13, design: .rounded))
+                .foregroundColor(.safeTextFaint)
 
             if !iconManager.supportsAlternateIcons {
                 Text("この端末ではアイコンの切り替えに対応していません。")
-                    .font(.system(size: 11.5, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundColor(.safeTextFaint)
             } else {
                 HStack(spacing: 12) {
                     ForEach(AppIconOption.allCases) { option in
@@ -93,13 +93,13 @@ struct SettingsView: View {
 
                 if let error = iconManager.lastErrorMessage {
                     Text(error)
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.system(size: 12.5, design: .rounded))
                         .foregroundColor(.safeCoral)
                 }
             }
         }
         .padding(14)
-        .background(Color.white.opacity(0.05))
+        .background(Color.safeCardFill)
         .cornerRadius(14)
     }
 
@@ -112,7 +112,7 @@ struct SettingsView: View {
                 // 実際のプレビュー画像はAsset Catalogに追加してください（README §5）。
                 // 画像が未追加でも枠だけは表示され、選択操作自体は動作します。
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.safeCardFillStrong)
                     .overlay(
                         Image(option.previewAssetName)
                             .resizable()
@@ -125,8 +125,8 @@ struct SettingsView: View {
                             .stroke(isSelected ? Color.safeTeal : .clear, lineWidth: 2)
                     )
                 Text(option.displayName)
-                    .font(.system(size: 10.5, design: .rounded))
-                    .foregroundColor(isSelected ? .safeTeal : .white.opacity(0.5))
+                    .font(.system(size: 12.5, design: .rounded))
+                    .foregroundColor(isSelected ? .safeTeal : .safeTextFaint)
             }
         }
     }
@@ -134,12 +134,12 @@ struct SettingsView: View {
     private var locationIntervalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("見守り中の位置情報 更新間隔")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                .foregroundColor(.safeText)
 
             Text("短くするほど「今すぐ知らせる」を押したときの位置が新しくなりますが、バッテリー消費が増えます。")
-                .font(.system(size: 11.5, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .font(.system(size: 13, design: .rounded))
+                .foregroundColor(.safeTextFaint)
 
             Picker("更新間隔", selection: Binding(
                 get: { checkInManager.locationManager.updateInterval },
@@ -152,7 +152,7 @@ struct SettingsView: View {
             .pickerStyle(.segmented)
         }
         .padding(14)
-        .background(Color.white.opacity(0.05))
+        .background(Color.safeCardFill)
         .cornerRadius(14)
     }
 }

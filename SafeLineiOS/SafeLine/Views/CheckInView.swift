@@ -15,11 +15,11 @@ struct CheckInView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("見守りチェックイン")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.safeText)
 
                     Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 14.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
 
                     timerDisplay
 
@@ -45,7 +45,7 @@ struct CheckInView: View {
 
                     Button(action: primaryAction) {
                         Text(manager.isActive ? "無事です（見守りを終える）" : "この内容で見守りをはじめる")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.safeTeal)
@@ -58,7 +58,7 @@ struct CheckInView: View {
                             showingMessageComposer = true
                         } label: {
                             Text("今すぐ知らせる")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Color.safeCoral.opacity(0.15))
@@ -97,11 +97,11 @@ struct CheckInView: View {
     private var locationStatus: some View {
         HStack(spacing: 6) {
             Image(systemName: "location.fill")
-                .font(.system(size: 11, design: .rounded))
+                .font(.system(size: 12.5, design: .rounded))
             Text(locationStatusText)
-                .font(.system(size: 11.5, design: .rounded))
+                .font(.system(size: 13, design: .rounded))
         }
-        .foregroundColor(.white.opacity(0.45))
+        .foregroundColor(.safeTextFaint)
     }
 
     private var locationStatusText: String {
@@ -120,10 +120,10 @@ struct CheckInView: View {
         VStack(spacing: 4) {
             Text(formatted(manager.isActive ? manager.remainingSeconds : TimeInterval(selectedMinutes * 60)))
                 .font(.system(size: 52, weight: .semibold, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(.safeText)
             Text(manager.isActive ? "\(Int(manager.remainingSeconds/60))分以内に「無事です」を教えてください" : "まだ何も始まっていません")
-                .font(.system(size: 12.5, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .font(.system(size: 14, design: .rounded))
+                .foregroundColor(.safeTextFaint)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -133,11 +133,11 @@ struct CheckInView: View {
         let isSelected = selectedMinutes == minutes
         return Button { selectedMinutes = minutes } label: {
             Text(minutes < 60 ? "\(minutes)分" : "\(minutes/60)時間")
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular, design: .monospaced))
+                .font(.system(size: 14.5, weight: isSelected ? .semibold : .regular, design: .monospaced))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(isSelected ? Color.safeTeal.opacity(0.18) : Color.white.opacity(0.05))
-                .foregroundColor(isSelected ? .safeTeal : .white.opacity(0.6))
+                .background(isSelected ? Color.safeTeal.opacity(0.18) : Color.safeCardFill)
+                .foregroundColor(isSelected ? .safeTeal : .safeTextDim)
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
@@ -148,12 +148,12 @@ struct CheckInView: View {
 
     private func field<V: View>(title: String, @ViewBuilder content: () -> V) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 12, design: .rounded)).foregroundColor(.white.opacity(0.5))
+            Text(title).font(.system(size: 13.5, design: .rounded)).foregroundColor(.safeTextFaint)
             content()
                 .padding(10)
-                .background(Color.white.opacity(0.05))
+                .background(Color.safeCardFill)
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(.safeText)
         }
     }
 
@@ -186,10 +186,10 @@ struct SMSUnavailableView: View {
                 .font(.system(size: 30, design: .rounded))
                 .foregroundColor(.safeCoral)
             Text("メッセージを送ることができませんでした")
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(size: 17.5, weight: .semibold, design: .rounded))
                 .multilineTextAlignment(.center)
             Text("かわりに、電話でつながることができます。")
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: 14.5, design: .rounded))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -200,7 +200,7 @@ struct SMSUnavailableView: View {
                     dismiss()
                 } label: {
                     Text("電話でつながる")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                         .padding(.horizontal, 24)
                         .padding(.vertical, 13)
                         .background(Color.safeTeal)

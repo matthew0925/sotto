@@ -28,12 +28,12 @@ struct JournalView: View {
                 .font(.system(size: 32, design: .rounded))
                 .foregroundColor(.safeTeal)
             Text("記録は守られています")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 16.5, weight: .semibold, design: .rounded))
+                .foregroundColor(.safeText)
             if let error = lock.lastError {
                 Text(error)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 13.5, design: .rounded))
+                    .foregroundColor(.safeTextFaint)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
             }
@@ -41,7 +41,7 @@ struct JournalView: View {
                 lock.authenticate()
             } label: {
                 Text("Face ID / パスコードで開く")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .background(Color.safeTeal)
@@ -56,21 +56,21 @@ struct JournalView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("記録（あなたの端末だけに）")
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(.safeText)
                 Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末にだけ保存され、クラウドには送りません。誰にも見せなくて大丈夫です。あなたのための記録です。")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.system(size: 14.5, design: .rounded))
+                    .foregroundColor(.safeTextDim)
 
                 DatePicker("日時", selection: $date)
                     .datePickerStyle(.compact)
-                    .foregroundColor(.white)
+                    .foregroundColor(.safeText)
 
                 TextEditor(text: $text)
                     .frame(height: 90)
                     .padding(8)
-                    .background(Color.white.opacity(0.05))
+                    .background(Color.safeCardFill)
                     .cornerRadius(10)
-                    .foregroundColor(.white)
+                    .foregroundColor(.safeText)
 
                 Button {
                     guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -83,7 +83,7 @@ struct JournalView: View {
                     }
                 } label: {
                     Text("そっと保存する")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(Color.safeTeal)
@@ -93,14 +93,14 @@ struct JournalView: View {
 
                 if let saveError = store.lastSaveError {
                     Text("⚠️ \(saveError)")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeCoral)
                 }
 
                 if store.entries.isEmpty {
                     Text("まだ記録はありません。\n思い出せるときに、少しずつで大丈夫です。")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
+                        .font(.system(size: 14.5, design: .rounded))
+                        .foregroundColor(.safeTextFaint)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 30)
@@ -108,11 +108,11 @@ struct JournalView: View {
                     ForEach(store.entries) { entry in
                         VStack(alignment: .leading, spacing: 3) {
                             Text(entry.date.formatted(date: .abbreviated, time: .shortened))
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(.system(size: 12.5, design: .monospaced))
                                 .foregroundColor(.safeTeal)
                             Text(entry.text)
-                                .font(.system(size: 13, design: .rounded))
-                                .foregroundColor(.white)
+                                .font(.system(size: 14.5, design: .rounded))
+                                .foregroundColor(.safeText)
                         }
                         .padding(.leading, 12)
                         .overlay(Rectangle().fill(Color.safeTeal).frame(width: 2), alignment: .leading)

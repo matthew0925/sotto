@@ -16,10 +16,10 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("いつでも、押せる場所を。")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.safeText)
                     Text("外出中でも、家の中でも。長押しで、迷わず助けを呼べます。")
-                        .font(.system(size: 13.5, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 15, design: .rounded))
+                        .foregroundColor(.safeTextDim)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
@@ -29,8 +29,8 @@ struct HomeView: View {
                     .padding(.top, 12)
 
                 Text("押している間だけ発信準備が進みます。離せば止まります。")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 13.5, design: .rounded))
+                    .foregroundColor(.safeTextFaint)
 
                 Spacer()
 
@@ -69,9 +69,9 @@ struct HomeView: View {
                 .overlay(
                     VStack(spacing: 4) {
                         Text("長押しでSOS")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17.5, weight: .semibold, design: .rounded))
                         Text("1.5秒、ゆっくり長押し")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: 12.5, weight: .medium, design: .rounded))
                             .opacity(0.75)
                     }
                     .foregroundColor(Color(red: 0.16, green: 0.04, blue: 0.02))
@@ -122,11 +122,11 @@ struct HomeView: View {
 
     private func quickCard(title: String, desc: String, actionTitle: String, action: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 14.5, weight: .semibold, design: .rounded)).foregroundColor(.white)
-            Text(desc).font(.system(size: 12.5, design: .rounded)).foregroundColor(.white.opacity(0.6))
+            Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundColor(.safeText)
+            Text(desc).font(.system(size: 14, design: .rounded)).foregroundColor(.safeTextDim)
             Button(action: action) {
                 Text(actionTitle)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
                     .background(Color.safeTeal)
@@ -135,7 +135,7 @@ struct HomeView: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.05))
+        .background(Color.safeCardFill)
         .cornerRadius(18)
     }
 }
