@@ -16,6 +16,7 @@ enum JournalExporter {
         let dateFont = UIFont.monospacedSystemFont(ofSize: 11, weight: .medium)
         let bodyFont = UIFont.systemFont(ofSize: 13)
         let noteFont = UIFont.italicSystemFont(ofSize: 10)
+        let hashFont = UIFont.monospacedSystemFont(ofSize: 9, weight: .regular)
 
         return renderer.pdfData { context in
             context.beginPage()
@@ -29,9 +30,14 @@ enum JournalExporter {
             generated.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: noteFont, .foregroundColor: UIColor.darkGray])
             y += 16
 
-            let note = "この端末に保存された記録のみを含みます。写真は含まれません。"
-            note.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: noteFont, .foregroundColor: UIColor.darkGray])
-            y += 24
+            let note = "この端末に保存された記録のみを含みます。写真は含まれません。各記録のハッシュ値は、\nその文章から独自に再計算すれば一致するはずです（作成後に書き換えられていないことの目安です。\n法的な証明として保証するものではありません）。"
+            note.draw(
+                with: CGRect(x: margin, y: y, width: pageWidth - margin * 2, height: 40),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: noteFont, .foregroundColor: UIColor.darkGray],
+                context: nil
+            )
+            y += 44
 
             if entries.isEmpty {
                 "記録はまだありません。".draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: bodyFont])
@@ -46,7 +52,7 @@ enum JournalExporter {
                     attributes: [.font: bodyFont],
                     context: nil
                 )
-                let entryHeight = 16 + bodySize.height + 18
+                let entryHeight = 16 + bodySize.height + 14 + 18
 
                 if y + entryHeight > pageHeight - margin {
                     context.beginPage()
@@ -62,7 +68,12 @@ enum JournalExporter {
                     attributes: [.font: bodyFont],
                     context: nil
                 )
-                y += bodySize.height + 18
+                y += bodySize.height + 4
+
+                let createdString = DateFormatter.localizedString(from: entry.createdAt, dateStyle: .short, timeStyle: .medium)
+                let hashLine = "作成: \(createdString)   SHA-256: \(entry.contentHash)"
+                hashLine.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: hashFont, .foregroundColor: UIColor.gray])
+                y += 14 + 18
             }
         }
     }

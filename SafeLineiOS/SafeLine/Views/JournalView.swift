@@ -179,6 +179,7 @@ private struct JournalEntryRow: View {
     let entry: JournalEntry
     let store: JournalStore
     @State private var photo: UIImage?
+    @State private var verified: Bool?
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -189,9 +190,15 @@ private struct JournalEntryRow: View {
                 Text(entry.text)
                     .font(.system(size: 14.5, design: .rounded))
                     .foregroundColor(.safeText)
+                integrityFooter
             }
             .padding(.leading, 12)
             .overlay(Rectangle().fill(Color.safeTeal).frame(width: 2), alignment: .leading)
+            .onAppear {
+                if verified == nil {
+                    verified = store.verify(entry)
+                }
+            }
 
             if entry.hasPhoto {
                 if let photo {
@@ -213,6 +220,30 @@ private struct JournalEntryRow: View {
             }
         }
         .padding(.bottom, 16)
+    }
+
+    /// Small, de-emphasized integrity marker — this screen is a "calm mode"
+    /// screen (unlike Home/CheckIn, nobody is looking at it mid-crisis), so a
+    /// bit more detail here is fine. Deliberately worded as a personal check,
+    /// not a legal claim — see JournalStore's doc comment for why.
+    private var integrityFooter: some View {
+        HStack(spacing: 4) {
+            Image(systemName: verified == false ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
+                .font(.system(size: 9))
+            Text(footerText)
+                .font(.system(size: 10, design: .monospaced))
+        }
+        .foregroundColor(verified == false ? .safeCoral : .safeTextFaint)
+        .padding(.top, 2)
+    }
+
+    private var footerText: String {
+        let shortHash = String(entry.contentHash.prefix(12))
+        let createdString = entry.createdAt.formatted(date: .omitted, time: .shortened)
+        switch verified {
+        case false: return "作成 \(createdString) ・ 変更が検出されました (\(shortHash))"
+        default: return "作成 \(createdString) ・ \(shortHash)"
+        }
     }
 }
 

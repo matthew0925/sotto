@@ -3,6 +3,8 @@ import CryptoKit
 
 struct JournalEntry: Identifiable, Codable {
     let id: UUID
+    /// The event date/time — user-editable via the DatePicker in JournalView.
+    /// Deliberately NOT the tamper-evidence timestamp; see `createdAt`.
     let date: Date
     let text: String
     /// True if a photo was attached. The photo itself is never stored inside
@@ -11,6 +13,18 @@ struct JournalEntry: Identifiable, Codable {
     /// doesn't force the whole entry list to be re-encrypted/re-written on
     /// every save.
     var hasPhoto: Bool = false
+
+    /// The device clock reading at the moment this entry was created —
+    /// unlike `date`, this is never user-editable. Paired with `contentHash`
+    /// below for tamper-evidence: see the type-level doc comment on
+    /// `JournalStore` for what this does and does not prove.
+    var createdAt: Date = Date()
+    /// SHA-256 of the entry's text (plus photo bytes, if attached), computed
+    /// once at creation and never recomputed. Since this app has no "edit an
+    /// existing entry" feature, the hash simply can't drift from what a
+    /// re-hash of the currently-stored text produces — if it ever doesn't
+    /// match, something outside this app's normal flow touched the data.
+    var contentHash: String = ""
 }
 
 /// Entries are JSON-encoded, then sealed with AES-GCM before touching disk.
@@ -20,6 +34,24 @@ struct JournalEntry: Identifiable, Codable {
 /// is intentional: an unlocked, passcode-less phone is not a safe place for this
 /// key to be usable at all. NSFileProtectionComplete + isExcludedFromBackup
 /// remain as a second layer under the encryption.
+///
+/// ## Tamper evidence — what this actually proves
+/// Every entry gets a SHA-256 hash + a device-clock timestamp at the moment
+/// it's created (`JournalEntry.contentHash` / `.createdAt`), and there is no
+/// "edit an existing entry" feature anywhere in the app. So: if you show
+/// someone an entry's text next to its hash, they can recompute SHA-256 of
+/// that text themselves and confirm it matches — proving the text hasn't
+/// changed since `createdAt` *as recorded on this device*.
+///
+/// What it does NOT prove: this is a self-attested hash, not a timestamp from
+/// a trusted third party (an RFC 3161 timestamp authority, a blockchain
+/// anchor, etc.), and someone with the encryption key and enough technical
+/// access could in principle rewrite both the text and its hash together.
+/// Practically that requires defeating the Keychain/passcode protection this
+/// data already sits behind — but it means this is a "did I edit this after
+/// the fact" self-check and a good-faith signal to show a support
+/// organization, not a forensic or legal guarantee. Don't oversell it as one
+/// in the UI.
 final class JournalStore: ObservableObject {
     @Published private(set) var entries: [JournalEntry] = []
     /// Set whenever the most recent add/delete failed to persist to disk — the
@@ -81,7 +113,10 @@ final class JournalStore: ObservableObject {
     }
 
     func add(text: String, date: Date = Date(), photoData: Data? = nil) {
-        let entry = JournalEntry(id: UUID(), date: date, text: text, hasPhoto: photoData != nil)
+        let createdAt = Date()
+        let entry = JournalEntry(id: UUID(), date: date, text: text, hasPhoto: photoData != nil,
+                                  createdAt: createdAt,
+                                  contentHash: Self.hash(text: text, photoData: photoData))
         if let photoData {
             guard savePhoto(photoData, for: entry.id) else {
                 lastSaveError = "写真を保存できませんでした。もう一度試してみてください。"
@@ -90,6 +125,30 @@ final class JournalStore: ObservableObject {
         }
         entries.append(entry)
         save()
+    }
+
+    /// Recomputes the hash from an entry's current stored text/photo and
+    /// compares it to what was recorded at creation. `nil` means "couldn't
+    /// check" (e.g. photo failed to decrypt) rather than "tampered" — callers
+    /// should treat that as inconclusive, not as a red flag.
+    func verify(_ entry: JournalEntry) -> Bool? {
+        let photoData: Data?
+        if entry.hasPhoto {
+            guard let data = photo(for: entry) else { return nil }
+            photoData = data
+        } else {
+            photoData = nil
+        }
+        return Self.hash(text: entry.text, photoData: photoData) == entry.contentHash
+    }
+
+    static func hash(text: String, photoData: Data?) -> String {
+        var hasher = SHA256()
+        hasher.update(data: Data(text.utf8))
+        if let photoData {
+            hasher.update(data: photoData)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     func delete(_ entry: JournalEntry) {
