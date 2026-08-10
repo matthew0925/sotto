@@ -1,6 +1,6 @@
 name: Sotto
 options:
-  bundleIdPrefix: com.sotto
+  bundleIdPrefix: com.takashi
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
@@ -29,7 +29,7 @@ targets:
           - UIInterfaceOrientationPortrait
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sotto.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.takashi.sotto
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
