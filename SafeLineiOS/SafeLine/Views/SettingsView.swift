@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var checkInManager: CheckInManager
     @EnvironmentObject var journalStore: JournalStore
+    @StateObject private var iconManager = IconManager()
     @State private var showingEraseConfirm = false
     @State private var didErase = false
 
@@ -25,6 +26,8 @@ struct SettingsView: View {
                     Text("このアプリはアカウント登録をせず、データはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.6))
+
+                    appIconSection
 
                     locationIntervalSection
 
@@ -64,6 +67,67 @@ struct SettingsView: View {
             Button("キャンセル", role: .cancel) {}
         } message: {
             Text("この操作は取り消せません。")
+        }
+    }
+
+    private var appIconSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ホーム画面のアイコン")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white)
+
+            Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
+                .font(.system(size: 11.5))
+                .foregroundColor(.white.opacity(0.5))
+
+            if !iconManager.supportsAlternateIcons {
+                Text("この端末ではアイコンの切り替えに対応していません。")
+                    .font(.system(size: 11.5))
+                    .foregroundColor(.white.opacity(0.4))
+            } else {
+                HStack(spacing: 12) {
+                    ForEach(AppIconOption.allCases) { option in
+                        iconChoice(option)
+                    }
+                }
+
+                if let error = iconManager.lastErrorMessage {
+                    Text(error)
+                        .font(.system(size: 11))
+                        .foregroundColor(.safeCoral)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(14)
+    }
+
+    private func iconChoice(_ option: AppIconOption) -> some View {
+        let isSelected = iconManager.current == option
+        return Button {
+            iconManager.setIcon(option)
+        } label: {
+            VStack(spacing: 6) {
+                // 実際のプレビュー画像はAsset Catalogに追加してください（README §5）。
+                // 画像が未追加でも枠だけは表示され、選択操作自体は動作します。
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        Image(option.previewAssetName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    )
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? Color.safeTeal : .clear, lineWidth: 2)
+                    )
+                Text(option.displayName)
+                    .font(.system(size: 10.5))
+                    .foregroundColor(isSelected ? .safeTeal : .white.opacity(0.5))
+            }
         }
     }
 

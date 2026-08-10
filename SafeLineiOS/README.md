@@ -58,14 +58,63 @@ SMS送信（`MFMessageComposeViewController`）はUsage Description不要です
 - **位置情報の更新間隔をユーザーが選択可能**：設定タブから30秒〜10分の間で選べます
   （短いほど送信時の位置が新しくなりますが、バッテリー消費が増えます）。設定はこの端末に保存され、
   次回以降のチェックインにも引き継がれます。
+- **選べるホーム画面アイコン**：`IconManager.swift`が`UIApplication.setAlternateIconName`
+  （Appleの正規機能）でアイコンを切り替えます。**電卓等への偽装ではなく**、パステル／モノクロ／
+  シンプルなど、周囲のアイコン配列・背景に馴染むデザインを選べるだけの機能です。
+  アプリ名の表示（「そっと」）はどのアイコンを選んでも変わりません。
 
-## 5. このMVPでまだ未実装の部分（次のステップ）
+## 5. アイコン画像の追加手順（§4のアイコン選択機能に必要）
+このリポジトリにはアイコンの**画像そのもの**は含まれていません（デザインアセットのため）。
+`SettingsView`の選択UIとロジックは動作しますが、実際に切り替わる見た目を持たせるには
+以下をXcode側で用意してください。
+
+1. Asset Catalogに、各バリエーションごとの画像セットを追加：
+   `IconPastel` / `IconMono` / `IconMinimal`（既存のデフォルトは`AppIcon`のまま）
+   - iOSの仕様上、アイコンは**アルファチャンネルなしの正方形PNG**（1024×1024推奨）
+2. 同じ名前で、設定画面のプレビュー用に小さいサイズの画像セットも追加：
+   `IconPastelPreview` / `IconMonoPreview` / `IconMinimalPreview`
+   （`AppIconOption.previewAssetName`が参照する名前です。プレビュー画像を用意するまでは
+   選択自体は問題なく動きますが、枠内に絵は表示されません）
+3. Info.plistに以下を追加し、`CFBundleAlternateIcons`にXcodeが自動生成しない場合は
+   手動でキーを追加してください：
+
+```xml
+<key>CFBundleIcons</key>
+<dict>
+    <key>CFBundlePrimaryIcon</key>
+    <dict>
+        <key>CFBundleIconFiles</key>
+        <array><string>AppIcon</string></array>
+    </dict>
+    <key>CFBundleAlternateIcons</key>
+    <dict>
+        <key>IconPastel</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array><string>IconPastel</string></array>
+        </dict>
+        <key>IconMono</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array><string>IconMono</string></array>
+        </dict>
+        <key>IconMinimal</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array><string>IconMinimal</string></array>
+        </dict>
+    </dict>
+</dict>
+```
+
+## 6. このMVPでまだ未実装の部分（次のステップ）
 - 相談窓口データの定期更新の仕組み（現状はアプリに同梱したJSONのみ・手動更新）
 - チェックインのバックグラウンド継続性の実機検証（「When In Use」権限のみのため、
   ロック画面が長時間続くと位置更新が止まる制約は上記の通り残っている）
 - 見守り連絡先の複数登録（現状は1件のみ）
+- アイコン画像アセット自体のデザイン（本README §5の手順でXcode側に追加が必要）
 
-## 6. 動作確認した設計判断（自己チェックより）
+## 7. 動作確認した設計判断（自己チェックより）
 「帰宅チェックイン」に限定せず、SOSボタンはホーム画面に常駐し、
 チェックインをセットしていなくても・屋内でも常に押せる位置づけにしています。
 これは、被害者支援団体の公開統計（面識者・交際相手・配偶者からの被害が過半数）を踏まえた設計判断です。
