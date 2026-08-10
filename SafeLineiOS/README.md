@@ -1,12 +1,19 @@
-# SafeLine iOS — セットアップ手順
+# そっと（Sotto）iOS — セットアップ手順
+
+アプリ名は「そっと」に決定。ホーム画面のアイコン下に表示されても
+用途が特定されにくいよう、あえて汎用的な言葉を採用しています。
 
 ## 1. Xcodeプロジェクトの作成
 1. Xcode →「Create New Project」→「App」
-2. Product Name: `SafeLine`、Interface: SwiftUI、Language: Swift
+2. Product Name: `Sotto`（英数字のみ推奨。日本語名は次の手順でDisplay Nameとして設定）、
+   Interface: SwiftUI、Language: Swift
 3. 作成後、`SafeLine/`フォルダの中身（このzipの`SafeLine/`以下）を、
    Xcodeが自動生成した同名フォルダに **上書き** してください
-   （`ContentView.swift`と`SafeLineApp.swift`は既存ファイルを置き換える形になります）
-4. `Resources/resources.json` はXcode上で「Add Files to "SafeLine"...」から追加し、
+   （`ContentView.swift`と`SafeLineApp.swift`は既存ファイルを置き換える形になります。
+   フォルダ名・Swiftの構造体名`SafeLineApp`は内部識別子なので、そのままでも動作に支障はありません）
+4. ホーム画面に表示される名前を「そっと」にするには、Target →「General」→
+   「Display Name」に `そっと` を入力してください（Bundle Nameとは別設定です）
+5. `Resources/resources.json` はXcode上で「Add Files to "SafeLine"...」から追加し、
    Target Membershipにチェックが入っていることを確認してください（Bundleに含める必要があります）
 
 ## 2. Info.plist に追加が必要な項目
@@ -23,7 +30,7 @@ SMS送信（`MFMessageComposeViewController`）はUsage Description不要です
 
 ## 3. 通知権限
 `AppDelegate`が起動時に通知許可をリクエストします。実機で確認する際は、
-設定アプリでSafeLineの通知が許可されているか確認してください。
+設定アプリで「そっと」の通知が許可されているか確認してください。
 
 ## 4. このMVPでまだ未実装の部分（次のステップ）
 - ジャーナルの暗号化強化：現状はファイル保護（`NSFileProtectionComplete`）のみ。
