@@ -47,21 +47,41 @@
 
   /* ---------- Top status ---------- */
   .topbar{
-    padding:22px 20px 8px;
+    padding:22px 20px 14px;
     display:flex;
     align-items:center;
     justify-content:space-between;
   }
   .brand{
-    font-family:'Zen Maru Gothic',sans-serif;
-    font-weight:700;
-    font-size:15px;
-    letter-spacing:0.02em;
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:9px;
   }
-  .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px var(--teal-dim);}
+  .brand .mark{
+    width:10px;height:10px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), var(--teal) 55%, transparent 82%);
+    box-shadow:0 0 0 5px var(--teal-dim), 0 0 12px rgba(47,224,197,0.5);
+    animation:brandBreathe 3.6s ease-in-out infinite;
+  }
+  @keyframes brandBreathe{
+    0%,100%{transform:scale(1); opacity:1;}
+    50%{transform:scale(1.2); opacity:.7;}
+  }
+  .brand .word{
+    position:relative;
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:0.03em;
+  }
+  .brand .word::after{
+    content:'';
+    position:absolute; left:1px; right:5px; bottom:-5px; height:2.5px;
+    border-radius:2px;
+    background:linear-gradient(90deg, var(--teal), var(--coral));
+    opacity:.6;
+    transform:rotate(-1deg);
+  }
   .status-pill{
     font-size:11px;
     color:var(--text-dim);
@@ -446,7 +466,7 @@
 <div class="frame">
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>そっと</div>
+    <div class="brand"><span class="mark"></span><span class="word">そっと</span></div>
     <div class="status-pill" id="statusPill">見守り: オフ</div>
   </div>
 
@@ -807,7 +827,9 @@ function triggerSOS(){
   setTimeout(()=>{
     // In a real build: send silent alert via background service.
     // Here we hand off to the phone's native dialer as the safest default.
-    window.location.href = 'tel:8891';
+    // 110 (police) rather than #8891 (a consultation line, not dispatch) —
+    // an "SOS" action must reach someone who can actually respond.
+    window.location.href = 'tel:110';
   }, 900);
 }
 

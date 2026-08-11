@@ -109,10 +109,15 @@ struct HomeView: View {
         let generator = UIImpactFeedbackGenerator(style: .heavy)
         generator.impactOccurred()
         withAnimation { holdProgress = 0 }
-        callNumber("8891")
+        callNumber("110")
         // Design note: iOS requires a visible, confirmable action for both calls and
         // SMS — there is no silent background dispatch. Treat this as the primary,
         // most reliable escalation path rather than a background side-channel.
+        //
+        // 110 (police), not #8891: #8891 is a consultation line, not a dispatch
+        // number, so an action explicitly framed as "SOS" needs to reach someone
+        // who can actually respond. #8891 stays one tap away via the quick-card
+        // below for anyone who wants support rather than police involvement.
     }
 
     private func callNumber(_ number: String) {
