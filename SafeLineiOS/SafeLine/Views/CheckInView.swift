@@ -25,7 +25,7 @@ struct CheckInView: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
 
-                    Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
+                    Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、\nあなたが選んだ人にそっと知らせが届きます。")
                         .font(.system(size: 14.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
