@@ -12,7 +12,7 @@ struct ResourcesView: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
                     Text("一人で抱え込まなくていい場所です。\n年齢・性別を問わず相談できます。あなたは悪くありません。")
-                        .font(.system(size: 14.5, design: .rounded))
+                        .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
                     ForEach(resources) { resource in
@@ -26,7 +26,7 @@ struct ResourcesView: View {
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(.safeText)
                                 Text(resource.desc)
-                                    .font(.system(size: 14, design: .rounded))
+                                    .font(.system(size: 12.5, design: .rounded))
                                     .foregroundColor(.safeTextDim)
                                 HStack(spacing: 6) {
                                     ForEach(resource.tags, id: \.self) { tag in

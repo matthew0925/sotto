@@ -87,7 +87,7 @@ struct JournalView: View {
                     }
                 }
                 Text("気になったこと、違和感、出来事の日時や状況を、\n思い出せる範囲で少しずつ残せます。\n暗号化してこの端末にだけ保存され、クラウドには送りません。\n誰にも見せなくて大丈夫です。あなたのための記録です。")
-                    .font(.system(size: 14.5, design: .rounded))
+                    .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.safeTextDim)
 
                 DatePicker("日時", selection: $date)

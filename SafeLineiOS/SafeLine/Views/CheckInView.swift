@@ -26,7 +26,7 @@ struct CheckInView: View {
                         .foregroundColor(.safeText)
 
                     Text("出かける前にセットしておくと、\n時間になっても「無事です」を押さなければ、\nあなたが選んだ人にそっと知らせが届きます。")
-                        .font(.system(size: 14.5, design: .rounded))
+                        .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
                     timerDisplay

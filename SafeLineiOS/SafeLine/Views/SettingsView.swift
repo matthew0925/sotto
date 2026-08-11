@@ -26,7 +26,7 @@ struct SettingsView: View {
             Form {
                 Section {
                     Text("このアプリはアカウント登録をせず、\nデータはこの端末にのみ暗号化して保存されます。\nサーバーには何も送信されません。")
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(size: 12.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
                 }
                 .listRowBackground(Color.clear)
