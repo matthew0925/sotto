@@ -25,7 +25,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("このアプリはアカウント登録をせず、\nデータはこの端末にのみ暗号化して保存されます。サーバーには何も送信されません。")
+                    Text("このアプリはアカウント登録をせず、\nデータはこの端末にのみ暗号化して保存されます。\nサーバーには何も送信されません。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
                 }
