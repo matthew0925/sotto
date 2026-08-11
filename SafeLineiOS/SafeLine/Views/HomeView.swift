@@ -4,9 +4,19 @@ import SwiftUI
 /// the user already knows, often indoors, not just "walking home alone at night".
 /// So this button must be reachable the instant the app opens, in any context.
 struct HomeView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     private let holdDuration: TimeInterval = 1.5
+
+    /// Dark near-black reads fine against the coral SOS button in Dark Mode
+    /// (7.1:1), but Light Mode's slightly deeper coral only clears 3.96:1
+    /// against it — under the 4.5:1 AA minimum for this text size. White
+    /// clears 4.6:1 there, so swap per color scheme rather than picking one
+    /// color that fails contrast in either appearance.
+    private var sosTextColor: Color {
+        colorScheme == .dark ? Color(red: 0.16, green: 0.04, blue: 0.02) : .white
+    }
 
     var body: some View {
         ZStack {
@@ -74,7 +84,7 @@ struct HomeView: View {
                             .font(.system(size: 12.5, weight: .medium, design: .rounded))
                             .opacity(0.75)
                     }
-                    .foregroundColor(Color(red: 0.16, green: 0.04, blue: 0.02))
+                    .foregroundColor(sosTextColor)
                 )
                 .shadow(color: Color.safeCoral.opacity(0.35), radius: 24, y: 12)
         }

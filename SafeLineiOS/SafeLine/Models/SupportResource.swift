@@ -4,7 +4,7 @@ struct SupportResource: Codable, Identifiable {
     var id: String { title }
     let title: String
     let desc: String
-    let type: String   // "tel" or "url"
+    let type: String   // "tel", "url", or "info" (no action — a static notice card)
     let value: String
     let tags: [String]
 

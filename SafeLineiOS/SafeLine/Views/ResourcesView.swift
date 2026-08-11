@@ -16,37 +16,63 @@ struct ResourcesView: View {
                         .foregroundColor(.safeTextDim)
 
                     ForEach(resources) { resource in
-                        Button {
-                            if let url = resource.actionURL {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(resource.title)
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.safeText)
-                                Text(resource.desc)
-                                    .font(.system(size: 12.5, design: .rounded))
-                                    .foregroundColor(.safeTextDim)
-                                HStack(spacing: 6) {
-                                    ForEach(resource.tags, id: \.self) { tag in
-                                        Text(tag)
-                                            .font(.system(size: 12.5, design: .rounded))
-                                            .padding(.horizontal, 8).padding(.vertical, 3)
-                                            .overlay(RoundedRectangle(cornerRadius: 99).stroke(Color.safeBorder))
-                                            .foregroundColor(.safeTextFaint)
-                                    }
+                        if resource.type == "info" {
+                            noticeCard(resource)
+                        } else {
+                            Button {
+                                if let url = resource.actionURL {
+                                    UIApplication.shared.open(url)
                                 }
+                            } label: {
+                                resourceCardBody(resource)
                             }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.safeCardFill)
-                            .cornerRadius(16)
                         }
                     }
                 }
                 .padding(20)
             }
         }
+    }
+
+    private func resourceCardBody(_ resource: SupportResource) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(resource.title)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(.safeText)
+            Text(resource.desc)
+                .font(.system(size: 12.5, design: .rounded))
+                .foregroundColor(.safeTextDim)
+            HStack(spacing: 6) {
+                ForEach(resource.tags, id: \.self) { tag in
+                    Text(tag)
+                        .font(.system(size: 12.5, design: .rounded))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .overlay(RoundedRectangle(cornerRadius: 99).stroke(Color.safeBorder))
+                        .foregroundColor(.safeTextFaint)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.safeCardFill)
+        .cornerRadius(16)
+    }
+
+    /// A static, non-tappable notice — e.g. "緊急避妊について" — styled distinctly
+    /// so it doesn't read as one more actionable contact in the list.
+    private func noticeCard(_ resource: SupportResource) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(resource.title)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(.safeCoral)
+            Text(resource.desc)
+                .font(.system(size: 12.5, design: .rounded))
+                .foregroundColor(.safeTextDim)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.safeCoral.opacity(0.08))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.safeCoral.opacity(0.25)))
+        .cornerRadius(16)
     }
 }
