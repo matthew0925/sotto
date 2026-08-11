@@ -45,12 +45,6 @@ struct CheckInView: View {
                         TextEditor(text: $manager.contactMessage)
                             .focused($focusedField, equals: .message)
                             .frame(height: 70)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("完了") { focusedField = nil }
-                                }
-                            }
                     }
                     .disabled(manager.isActive)
 
@@ -84,6 +78,20 @@ struct CheckInView: View {
                 .padding(20)
             }
             .scrollDismissesKeyboard(.interactively)
+        }
+        // Attached once, at the top level, rather than nested on a single field's
+        // TextEditor — attaching/detaching a `.toolbar` per-field as focus moves
+        // between the name/phone/message fields was forcing a keyboard-accessory
+        // reconciliation on every focus change, which is what showed up as a
+        // brief stutter when starting to type. One stable toolbar, shown for
+        // whichever field is focused, avoids that churn and also means the name
+        // and phone fields — which previously had no dismiss button at all — now
+        // get a "完了" button too.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("完了") { focusedField = nil }
+            }
         }
         .sheet(isPresented: $showingMessageComposer) {
             if MFMessageComposeViewController.canSendText() {
@@ -159,6 +167,8 @@ struct CheckInView: View {
                 HStack(spacing: 8) {
                     TextField("名前", text: $newContactName)
                         .focused($focusedField, equals: .contactName)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .contactPhone }
                         .font(.system(size: 13.5, design: .rounded))
                         .padding(10)
                         .background(Color.safeCardFill)
