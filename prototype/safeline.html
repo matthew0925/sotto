@@ -497,7 +497,7 @@
       <div class="card-row">
         <div>
           <div class="card-title">📍 帰宅チェックイン</div>
-          <div class="card-desc">時間になっても「無事」を押さなければ、あなたが選んだ人に現在地とともにそっと知らせが届きます。</div>
+          <div class="card-desc">時間になっても「無事です」を押さなければ、あなたが選んだ人に現在地とともにそっと知らせが届きます。</div>
         </div>
         <span class="chip off" id="checkinChip">オフ</span>
       </div>
@@ -523,7 +523,7 @@
   <!-- ================= CHECK-IN ================= -->
   <div class="screen" id="screen-checkin">
     <h1 class="hero">帰宅チェックイン</h1>
-    <p class="hero-sub">出かける前にセットしておくと、時間になっても「無事」を押さなければ、あなたが選んだ人にそっと知らせが届きます。</p>
+    <p class="hero-sub">出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。</p>
 
     <div class="timer-display" id="timerDisplay">30:00</div>
     <div class="timer-caption" id="timerCaption">まだ何も始まっていません</div>
@@ -613,12 +613,12 @@
 
     <div id="journalContent" style="display:none;">
       <div style="display:flex; align-items:flex-start; justify-content:space-between;">
-        <h1 class="hero" style="margin-bottom:4px;">記録（あなたの端末だけに）</h1>
+        <h1 class="hero" style="margin-bottom:4px;">記録（この端末だけに）</h1>
         <button id="exportBtn" onclick="exportJournal()"
                 style="display:none; background:none; border:none; color:var(--teal); font-size:18px; cursor:pointer; padding:6px;"
                 title="書き出す">⇧</button>
       </div>
-      <p class="hero-sub">気になったこと、違和感、出来事の日時や状況を、<br>思い出せる範囲で少しずつ残せます。<br>暗号化してこの端末にだけ保存され、クラウドには送りません。<br>誰にも見せなくて大丈夫です。あなたのための記録です。</p>
+      <p class="hero-sub">気になったこと、違和感、出来事の日時や状況を、<br>思い出せる範囲で少しずつ残せます。<br>暗号化してこの端末の中だけに残ります。<br>誰にも見せなくて大丈夫です。あなたのための記録です。</p>
 
       <div class="field">
         <label>日時</label>
@@ -647,7 +647,7 @@
   <!-- ================= SETTINGS ================= -->
   <div class="screen" id="screen-settings">
     <h1 class="hero">設定</h1>
-    <p class="hero-sub">名前もメールも要りません。記録は暗号化したまま、<br>この端末の中だけに残ります。</p>
+    <p class="hero-sub">名前もメールも要りません。記録は暗号化して<br>この端末の中だけに残ります。</p>
 
     <div class="settings-group">
       <div class="group-header">ホーム画面</div>
@@ -783,12 +783,12 @@
   <div class="ob-page" data-page="3">
     <div class="ob-icon">📝</div>
     <div class="ob-title">記録はあなたのために</div>
-    <div class="ob-body">気になったことを、そっと書き留めておけます。<br>この端末の中で暗号化して保存され、<br>Face IDがなければ誰にも開けません。</div>
+    <div class="ob-body">気になったことを、そっと書き留めておけます。<br>暗号化してこの端末の中だけに残ります。<br>Face IDがなければ誰にも開けません。</div>
   </div>
   <div class="ob-page" data-page="4">
     <div class="ob-icon">🔐</div>
     <div class="ob-title">アカウント登録は不要です</div>
-    <div class="ob-body">氏名もメールアドレスも聞きません。<br>データはこの端末だけに残ります。</div>
+    <div class="ob-body">氏名もメールアドレスも聞きません。<br>データは暗号化してこの端末の中だけに残ります。</div>
   </div>
 
   <div class="ob-dots" id="obDots"></div>

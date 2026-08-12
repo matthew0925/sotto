@@ -100,7 +100,7 @@ struct JournalView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
-                    Text("記録（あなたの端末だけに）")
+                    Text("記録（この端末だけに）")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
                     Spacer()
@@ -115,7 +115,7 @@ struct JournalView: View {
                         }
                     }
                 }
-                Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末にだけ保存され、クラウドには送りません。誰にも見せなくて大丈夫です。あなたのための記録です。")
+                Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末の中だけに残ります。誰にも見せなくて大丈夫です。あなたのための記録です。")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.safeTextDim)
 
