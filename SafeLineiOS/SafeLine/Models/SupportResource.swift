@@ -4,7 +4,10 @@ struct SupportResource: Codable, Identifiable {
     var id: String { title }
     let title: String
     let desc: String
-    let type: String   // "tel", "url", or "info" (no action — a static notice card)
+    /// "tel", "url", or "info" (a notice card — non-actionable unless `value`
+    /// carries a link, e.g. to a government page that stays current on its own
+    /// rather than data this static bundle would need to keep re-shipping).
+    let type: String
     let value: String
     let tags: [String]
 
@@ -12,6 +15,7 @@ struct SupportResource: Codable, Identifiable {
         switch type {
         case "tel": return URL(string: "tel:\(value)")
         case "url": return URL(string: value)
+        case "info": return value.isEmpty ? nil : URL(string: value)
         default: return nil
         }
     }

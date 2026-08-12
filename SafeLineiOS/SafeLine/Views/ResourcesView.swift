@@ -58,16 +58,28 @@ struct ResourcesView: View {
         .cornerRadius(16)
     }
 
-    /// A static, non-tappable notice — e.g. "緊急避妊について" — styled distinctly
-    /// so it doesn't read as one more actionable contact in the list.
+    /// A notice — e.g. "緊急避妊について" — styled distinctly so it doesn't read as
+    /// one more actionable contact in the list. If `value` carries a link (a
+    /// government page that's kept current on its own, e.g. the monthly-updated
+    /// pharmacy list), show it as a separate, clearly-labeled tap target below
+    /// the notice text rather than making the whole card silently tappable.
     private func noticeCard(_ resource: SupportResource) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(resource.title)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor(.safeCoral)
             Text(resource.desc)
                 .font(.system(size: 12.5, design: .rounded))
                 .foregroundColor(.safeTextDim)
+            if let url = resource.actionURL {
+                Button {
+                    UIApplication.shared.open(url)
+                } label: {
+                    Text((resource.tags.first ?? "詳しく見る") + " →")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(.safeCoral)
+                }
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
