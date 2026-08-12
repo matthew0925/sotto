@@ -15,7 +15,7 @@ struct OnboardingView: View {
 
     private let pages: [Page] = [
         Page(icon: "hand.point.up.left.fill",
-             title: "そっと、へようこそ",
+             title: "そっとへようこそ",
              body: "そっとは、危ないと感じたとき、迷わず助けを呼べる場所。\nあなたのための、静かな安全アプリです。"),
         Page(icon: "circle.fill",
              title: "長押しでSOS",
