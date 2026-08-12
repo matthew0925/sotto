@@ -28,7 +28,7 @@ struct OnboardingView: View {
              body: "気になったことを、そっと書き留めておけます。\nこの端末の中で暗号化して保存され、\nFace IDがなければ誰にも開けません。"),
         Page(icon: "lock.shield.fill",
              title: "アカウント登録は不要です",
-             body: "氏名もメールアドレスも聞きません。\nデータはこの端末にのみ保存され、\nサーバーには送信されません。")
+             body: "氏名もメールアドレスも聞きません。\nデータはこの端末だけに残ります。")
     ]
 
     var body: some View {
