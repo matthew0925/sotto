@@ -26,6 +26,7 @@ struct ResourcesView: View {
                             } label: {
                                 resourceCardBody(resource)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -86,7 +87,9 @@ struct ResourcesView: View {
                     Text((resource.tags.first ?? "詳しく見る") + " →")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeCoral)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(16)
