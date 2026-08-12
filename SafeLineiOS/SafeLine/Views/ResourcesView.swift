@@ -39,9 +39,13 @@ struct ResourcesView: View {
             Text(resource.title)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor(.safeText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
             Text(resource.desc)
                 .font(.system(size: 12.5, design: .rounded))
                 .foregroundColor(.safeTextDim)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
             HStack(spacing: 6) {
                 ForEach(resource.tags, id: \.self) { tag in
                     Text(tag)
@@ -68,9 +72,13 @@ struct ResourcesView: View {
             Text(resource.title)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor(.safeCoral)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
             Text(resource.desc)
                 .font(.system(size: 12.5, design: .rounded))
                 .foregroundColor(.safeTextDim)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
             if let url = resource.actionURL {
                 Button {
                     UIApplication.shared.open(url)
