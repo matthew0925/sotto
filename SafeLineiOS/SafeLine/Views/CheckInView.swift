@@ -8,6 +8,11 @@ struct CheckInView: View {
     @State private var showingMessageComposer = false
     @State private var newContactName = ""
     @State private var newContactPhone = ""
+    /// Set while editing an existing contact (tapped its row) rather than
+    /// adding a new one — the add/save row's fields and button are shared
+    /// between both flows. Previously there was no way to fix a typo in a
+    /// saved contact without deleting it and re-adding from scratch.
+    @State private var editingContactID: UUID?
     /// See JournalView's matching property for why this exists — a
     /// TextEditor doesn't reliably give up the keyboard on its own when the
     /// user taps another tab.
@@ -163,15 +168,31 @@ struct CheckInView: View {
                         if !manager.isActive {
                             Button {
                                 manager.contacts.removeAll { $0.id == contact.id }
+                                if editingContactID == contact.id {
+                                    cancelEditingContact()
+                                }
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.safeTextFaint)
                             }
+                            .accessibilityLabel("\(contact.name)を削除")
                         }
                     }
                     .padding(10)
-                    .background(Color.safeCardFill)
+                    .background(editingContactID == contact.id ? Color.safeCardFillStrong : Color.safeCardFill)
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(editingContactID == contact.id ? Color.safeTeal : Color.clear, lineWidth: 1.5)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard !manager.isActive else { return }
+                        editingContactID = contact.id
+                        newContactName = contact.name
+                        newContactPhone = contact.phoneNumber
+                        focusedField = .contactName
+                    }
                 }
             }
 
@@ -198,26 +219,51 @@ struct CheckInView: View {
                         .foregroundColor(.safeText)
                         .frame(maxWidth: .infinity)
 
+                    if editingContactID != nil {
+                        Button {
+                            cancelEditingContact()
+                        } label: {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 26))
+                                .foregroundColor(.safeTextFaint)
+                        }
+                        .accessibilityLabel("編集をキャンセル")
+                    }
+
                     Button {
-                        addContact()
+                        saveContact()
                     } label: {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: editingContactID == nil ? "plus.circle.fill" : "checkmark.circle.fill")
                             .font(.system(size: 26))
                             .foregroundColor(.safeTeal)
                     }
+                    .accessibilityLabel(editingContactID == nil ? "連絡先を追加" : "変更を保存")
                     .disabled(newContactPhone.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
     }
 
-    private func addContact() {
+    private func saveContact() {
         let phone = newContactPhone.trimmingCharacters(in: .whitespaces)
         guard !phone.isEmpty else { return }
         let name = newContactName.trimmingCharacters(in: .whitespaces)
-        manager.contacts.append(EmergencyContact(name: name.isEmpty ? "連絡先" : name, phoneNumber: phone))
+        let resolvedName = name.isEmpty ? "連絡先" : name
+
+        if let editingContactID, let index = manager.contacts.firstIndex(where: { $0.id == editingContactID }) {
+            manager.contacts[index].name = resolvedName
+            manager.contacts[index].phoneNumber = phone
+        } else {
+            manager.contacts.append(EmergencyContact(name: resolvedName, phoneNumber: phone))
+        }
+        cancelEditingContact()
+    }
+
+    private func cancelEditingContact() {
+        editingContactID = nil
         newContactName = ""
         newContactPhone = ""
+        focusedField = nil
     }
 
     private var locationStatus: some View {

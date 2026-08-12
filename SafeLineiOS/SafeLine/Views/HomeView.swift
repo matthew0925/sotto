@@ -4,6 +4,8 @@ import SwiftUI
 /// the user already knows, often indoors, not just "walking home alone at night".
 /// So this button must be reachable the instant the app opens, in any context.
 struct HomeView: View {
+    @EnvironmentObject var manager: CheckInManager
+    @EnvironmentObject var router: AppRouter
     @Environment(\.colorScheme) private var colorScheme
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
@@ -47,12 +49,15 @@ struct HomeView: View {
 
                 Spacer()
 
-                quickCard(
-                    title: "☎️ #8891 に電話",
-                    desc: "性犯罪・性暴力被害者のためのワンストップ支援センター。24時間365日、通話無料。",
-                    actionTitle: "今すぐ電話"
-                ) {
-                    callNumber("8891")
+                VStack(spacing: 12) {
+                    checkinQuickCard
+                    quickCard(
+                        title: "☎️ #8891 に電話",
+                        desc: "性犯罪・性暴力被害者のためのワンストップ支援センター。24時間365日、通話無料。",
+                        actionTitle: "今すぐ電話"
+                    ) {
+                        callNumber("8891")
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
@@ -96,6 +101,21 @@ struct HomeView: View {
                 .onChanged { _ in startHold() }
                 .onEnded { _ in cancelHold() }
         )
+        // The 1.5s hold-to-confirm is meant to prevent an accidental touch from
+        // dialing 110 — but a DragGesture has no built-in VoiceOver equivalent,
+        // so without this, a VoiceOver user could not activate the single most
+        // important control in the app at all. VoiceOver's own double-tap is
+        // already a deliberate, two-step action (navigate to the element, then
+        // activate it), so it serves the same "not an accident" purpose the
+        // hold serves for sighted/typical touch — no separate hold requirement
+        // needed here.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("SOS")
+        .accessibilityHint("ダブルタップすると、110番への発信準備が整います")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction {
+            triggerSOS()
+        }
     }
 
     private func startHold() {
@@ -136,6 +156,44 @@ struct HomeView: View {
     private func callNumber(_ number: String) {
         guard let url = URL(string: "tel:\(number)") else { return }
         UIApplication.shared.open(url)
+    }
+
+    /// The prototype has always had this card; the real app's Home screen
+    /// never did, leaving the tab bar as the only way to reach check-in from
+    /// Home. Mirrors the prototype's layout: status chip + a button that
+    /// only navigates to the 見守り tab, never starts a check-in by itself.
+    private var checkinQuickCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("📍 帰宅チェックイン")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(.safeText)
+                Spacer()
+                Text(manager.isActive ? "見守り中" : "オフ")
+                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(manager.isActive ? Color.safeTeal.opacity(0.18) : Color.safeCardFillStrong)
+                    .foregroundColor(manager.isActive ? .safeTeal : .safeTextFaint)
+                    .cornerRadius(99)
+            }
+            Text("時間になっても「無事です」を押さなければ、あなたが選んだ人に現在地とともにそっと知らせが届きます。")
+                .font(.system(size: 14, design: .rounded))
+                .foregroundColor(.safeTextDim)
+            Button {
+                router.selectedTab = .checkin
+            } label: {
+                Text(manager.isActive ? "見守りを確認する" : "設定する")
+                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(Color.safeTeal)
+                    .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
+                    .cornerRadius(12)
+            }
+        }
+        .padding(16)
+        .background(Color.safeCardFill)
+        .cornerRadius(18)
     }
 
     private func quickCard(title: String, desc: String, actionTitle: String, action: @escaping () -> Void) -> some View {

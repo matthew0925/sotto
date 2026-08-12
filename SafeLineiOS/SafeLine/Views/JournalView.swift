@@ -226,6 +226,7 @@ private struct JournalEntryRow: View {
     let store: JournalStore
     @State private var photo: UIImage?
     @State private var verified: Bool?
+    @State private var showingDeleteConfirm = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -263,6 +264,30 @@ private struct JournalEntryRow: View {
                             }
                         }
                 }
+            }
+
+            Spacer(minLength: 0)
+
+            // JournalStore.delete(_:) existed and was unit-tested, but nothing
+            // in this view ever called it — there was no way to remove a
+            // saved entry from the app at all. A destructive action gets the
+            // same explicit confirmation pattern as "この端末のデータをすべて
+            // 消す" in Settings, rather than a bare swipe-to-delete.
+            Button {
+                showingDeleteConfirm = true
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 14))
+                    .foregroundColor(.safeTextFaint)
+            }
+            .accessibilityLabel("この記録を削除する")
+            .confirmationDialog("この記録を削除しますか？", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+                Button("削除する", role: .destructive) {
+                    store.delete(entry)
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("この操作は取り消せません。")
             }
         }
         .padding(.bottom, 16)
