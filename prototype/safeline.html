@@ -587,6 +587,10 @@
 
   <!-- ================= JOURNAL ================= -->
   <div class="screen" id="screen-journal">
+    <button id="quickExitBtn" onclick="quickExitJournal()" title="今すぐ離脱する"
+            style="display:none; align-items:center; justify-content:center; position:fixed; top:calc(env(safe-area-inset-top) + 68px); right:20px; z-index:20;
+                   width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+                   background:var(--panel); color:var(--text-dim); font-size:13px; font-weight:700;">✕</button>
     <div class="lock-overlay" id="journalLock">
       <div class="lock-icon">🔒</div>
       <h1 class="hero" style="margin:0; font-size:18px;">記録は守られています</h1>
@@ -1159,7 +1163,17 @@ function unlockJournal(){
     journalUnlocked = true;
     document.getElementById('journalLock').style.display = 'none';
     document.getElementById('journalContent').style.display = 'block';
+    document.getElementById('quickExitBtn').style.display = 'flex';
   }, 500);
+}
+// Experimental: always-reachable escape hatch from the most sensitive
+// screen. Re-locks immediately (not just switching screens) so anyone
+// who picks the phone back up lands on the Face ID prompt, not the
+// last-viewed entry.
+function quickExitJournal(){
+  document.getElementById('quickExitBtn').style.display = 'none';
+  lockJournal();
+  go('home');
 }
 lockJournal();
 

@@ -18,12 +18,15 @@ struct JournalView: View {
     @FocusState private var isTextEditorFocused: Bool
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             Color.safeInk.ignoresSafeArea()
             if lock.isUnlocked {
                 content
             } else {
                 lockScreen
+            }
+            if lock.isUnlocked {
+                quickExitButton
             }
         }
         .onAppear { lock.authenticate() }
@@ -36,6 +39,30 @@ struct JournalView: View {
         .sheet(item: $shareItem) { item in
             ActivityView(activityItems: [item.data])
         }
+    }
+
+    /// Experimental: a persistent, always-reachable escape hatch from the
+    /// most sensitive screen in the app. Pinned above the scroll content
+    /// (not inside it) so it's tappable without scrolling back up first.
+    /// Locks the journal again immediately — not just switching tabs — so
+    /// if someone else picks the phone back up right after, they land on
+    /// the Face ID prompt, not the last-viewed entry.
+    private var quickExitButton: some View {
+        Button {
+            isTextEditorFocused = false
+            lock.lock()
+            router.selectedTab = .home
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.safeTextDim)
+                .frame(width: 30, height: 30)
+                .background(Color.safeCardFillStrong)
+                .clipShape(Circle())
+        }
+        .accessibilityLabel("今すぐ離脱する")
+        .padding(.top, 8)
+        .padding(.trailing, 16)
     }
 
     private var lockScreen: some View {
