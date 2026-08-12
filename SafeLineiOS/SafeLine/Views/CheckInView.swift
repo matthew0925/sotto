@@ -16,6 +16,17 @@ struct CheckInView: View {
 
     private let presets = [15, 30, 60, 120]
 
+    /// `DateFormatter()` init is genuinely expensive (locale/calendar setup) —
+    /// creating a fresh one inside a computed property that's re-evaluated on
+    /// every keystroke (this view's `body` re-runs whenever `newContactName`
+    /// changes) was the actual cause of the stutter reported while typing the
+    /// contact name. A single cached formatter fixes it.
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
     var body: some View {
         ZStack {
             Color.safeInk.ignoresSafeArea()
@@ -25,7 +36,7 @@ struct CheckInView: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
 
-                    Text("出かける前にセットしておくと、\n時間になっても「無事です」を押さなければ、\nあなたが選んだ人にそっと知らせが届きます。")
+                    Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
@@ -97,7 +108,8 @@ struct CheckInView: View {
             if MFMessageComposeViewController.canSendText() {
                 MessageComposerView(recipients: manager.contacts.map(\.phoneNumber),
                                      body: manager.contactMessage,
-                                     mapsLink: manager.locationManager.mapsLink)
+                                     mapsLink: manager.locationManager.mapsLink,
+                                     deadline: manager.endDate)
             } else {
                 // This device can't compose SMS at all (no SIM/carrier plan,
                 // Messages disabled, etc.) — previously this just presented an
@@ -225,9 +237,7 @@ struct CheckInView: View {
         guard let updated = manager.locationManager.lastUpdated else {
             return "現在地を確認しています…"
         }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return "現在地を \(formatter.string(from: updated)) ごろ確認しました（知らせと一緒に届きます）"
+        return "現在地を \(Self.timeFormatter.string(from: updated)) ごろ確認しました（知らせと一緒に届きます）"
     }
 
     private var timerDisplay: some View {
@@ -335,15 +345,32 @@ struct MessageComposerView: UIViewControllerRepresentable {
     let recipients: [String]
     let body: String
     let mapsLink: String?
+    /// The active check-in's `endDate`, if any — the recipient otherwise has
+    /// no way to know how long to wait before worrying. Rendered as a plain
+    /// "HH:mm までに" clock time rather than a relative "◯分後" duration,
+    /// since the recipient reads this message at some unknown point after
+    /// it's sent, not at the moment it's composed.
+    let deadline: Date?
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
 
     func makeUIViewController(context: Context) -> MFMessageComposeViewController {
         let vc = MFMessageComposeViewController()
         vc.recipients = recipients
-        if let mapsLink {
-            vc.body = body + "\n現在地: \(mapsLink)"
-        } else {
-            vc.body = body + "（現在地の共有はお使いの地図アプリからお願いします）"
+        var text = body
+        if let deadline, deadline > Date() {
+            text += "\n\(Self.timeFormatter.string(from: deadline))までに「無事です」の連絡がなければ、確認をお願いします。"
         }
+        if let mapsLink {
+            text += "\n現在地: \(mapsLink)"
+        } else {
+            text += "（現在地の共有はお使いの地図アプリからお願いします）"
+        }
+        vc.body = text
         vc.messageComposeDelegate = context.coordinator
         return vc
     }

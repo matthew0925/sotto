@@ -18,13 +18,15 @@ struct JournalView: View {
     @FocusState private var isTextEditorFocused: Bool
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color.safeInk.ignoresSafeArea()
             if lock.isUnlocked {
                 content
             } else {
                 lockScreen
             }
+        }
+        .overlay(alignment: .topTrailing) {
             if lock.isUnlocked {
                 quickExitButton
             }
@@ -113,7 +115,7 @@ struct JournalView: View {
                         }
                     }
                 }
-                Text("気になったこと、違和感、出来事の日時や状況を、\n思い出せる範囲で少しずつ残せます。\n暗号化してこの端末にだけ保存され、クラウドには送りません。\n誰にも見せなくて大丈夫です。あなたのための記録です。")
+                Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末にだけ保存され、クラウドには送りません。誰にも見せなくて大丈夫です。あなたのための記録です。")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.safeTextDim)
 

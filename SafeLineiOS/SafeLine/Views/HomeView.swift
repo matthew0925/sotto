@@ -18,29 +18,32 @@ struct HomeView: View {
         colorScheme == .dark ? Color(red: 0.16, green: 0.04, blue: 0.02) : .white
     }
 
+    /// Redesigned so the SOS button is the vertical center of the screen —
+    /// the one thing this screen exists for — rather than top-anchored above
+    /// a long explanation. Two flexible Spacers do the centering; the small
+    /// label at the very top and the quick-card pinned at the bottom stay
+    /// out of the way instead of competing with it for attention.
     var body: some View {
         ZStack {
             Color.safeInk.ignoresSafeArea()
 
-            VStack(spacing: 28) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("いつでも、押せる場所を。")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.safeText)
-                    Text("外出中でも、家の中でも。長押しで、迷わず助けを呼べます。")
-                        .font(.system(size: 15, design: .rounded))
-                        .foregroundColor(.safeTextDim)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-
-                sosButton
-                    .padding(.top, 12)
-
-                Text("押している間だけ発信準備が進みます。離せば止まります。")
-                    .font(.system(size: 13.5, design: .rounded))
+            VStack(spacing: 0) {
+                Text("いつでも、そばに")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundColor(.safeTextFaint)
+                    .tracking(1)
+                    .padding(.top, 20)
+
+                Spacer()
+
+                VStack(spacing: 22) {
+                    sosButton
+                    Text("押している間だけ発信準備が進みます。離せば止まります。")
+                        .font(.system(size: 13.5, design: .rounded))
+                        .foregroundColor(.safeTextFaint)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 48)
+                }
 
                 Spacer()
 

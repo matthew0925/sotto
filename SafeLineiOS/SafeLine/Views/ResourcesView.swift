@@ -11,7 +11,7 @@ struct ResourcesView: View {
                     Text("相談窓口")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
-                    Text("一人で抱え込まなくていい場所です。\n年齢・性別を問わず相談できます。あなたは悪くありません。")
+                    Text("一人で抱え込まなくていい場所です。年齢・性別を問わず相談できます。あなたは悪くありません。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 

@@ -471,9 +471,14 @@
   </div>
 
   <!-- ================= HOME ================= -->
-  <div class="screen active" id="screen-home">
-    <h1 class="hero">帰るまでが、<br>いちばん大事。</h1>
-    <p class="hero-sub">危ないと感じたら、迷わず押せる場所をここに。<br>長押しするだけで、信頼できる人にそっと知らせが届きます。</p>
+  <!-- Redesigned so the SOS button sits at the screen's vertical center —
+       the one thing this screen exists for — instead of top-anchored above
+       a long explanation. Two flex spacers do the centering; a small label
+       up top and the cards pinned at the bottom stay out of its way. -->
+  <div class="screen active" id="screen-home" style="padding-top:4px;">
+    <div style="text-align:center; font-size:11px; font-weight:600; letter-spacing:0.1em; color:var(--text-dim); padding-top:16px;">いつでも、そばに</div>
+
+    <div style="flex:1;"></div>
 
     <div class="sos-wrap">
       <div class="sos-ring">
@@ -483,14 +488,16 @@
           <span class="sub">1.5秒、ゆっくり長押し</span>
         </button>
       </div>
-      <div class="sos-hint" id="sosHint">押している間だけ発信準備が進みます。離せば止まります。</div>
+      <div class="sos-hint" id="sosHint" style="max-width:280px; margin-left:auto; margin-right:auto;">押している間だけ発信準備が進みます。離せば止まります。</div>
     </div>
+
+    <div style="flex:1;"></div>
 
     <div class="card">
       <div class="card-row">
         <div>
           <div class="card-title">📍 帰宅チェックイン</div>
-          <div class="card-desc">時間になっても「無事」を押さなければ、<br>あなたが選んだ人に現在地とともにそっと知らせが届きます。</div>
+          <div class="card-desc">時間になっても「無事」を押さなければ、あなたが選んだ人に現在地とともにそっと知らせが届きます。</div>
         </div>
         <span class="chip off" id="checkinChip">オフ</span>
       </div>
@@ -503,7 +510,7 @@
       <div class="card-row">
         <div>
           <div class="card-title">☎️ #8891 に電話</div>
-          <div class="card-desc">性犯罪・性暴力被害者のためのワンストップ支援センター。<br>24時間365日・通話無料。</div>
+          <div class="card-desc">性犯罪・性暴力被害者のためのワンストップ支援センター。24時間365日・通話無料。</div>
         </div>
       </div>
       <div style="margin-top:12px; display:flex; gap:8px;">
@@ -560,7 +567,7 @@
     </a>
 
     <a class="res-item card" href="https://www.gender.go.jp/policy/no_violence/seibouryoku/consult.html" target="_blank" rel="noopener">
-      <div class="card-title">内閣府 性犯罪・性暴力ワンストップ支援センター</div>
+      <div class="card-title">内閣府 性犯罪・性暴力の相談窓口一覧</div>
       <div class="card-desc">電話が苦手な人向けのチャット相談窓口や、各都道府県の窓口一覧を確認できます。</div>
       <div class="res-meta"><span class="tag">チャット</span><span class="tag">窓口一覧</span></div>
     </a>
