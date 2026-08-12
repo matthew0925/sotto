@@ -363,7 +363,11 @@ struct MessageComposerView: UIViewControllerRepresentable {
         vc.recipients = recipients
         var text = body
         if let deadline, deadline > Date() {
-            text += "\n\(Self.timeFormatter.string(from: deadline))までに「無事です」の連絡がなければ、確認をお願いします。"
+            // The user's own message (e.g. "時間までに連絡がなければ確認して。")
+            // already asks for the same thing in their own words — repeating
+            // "連絡がなければ確認してください" here just duplicates it. This adds
+            // only the concrete time that message's "時間まで" is pointing at.
+            text += "\n（見守りの目安時刻: \(Self.timeFormatter.string(from: deadline))）"
         }
         if let mapsLink {
             text += "\n現在地: \(mapsLink)"
