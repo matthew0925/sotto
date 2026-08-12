@@ -18,7 +18,7 @@ struct OpenSOSIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         if let url = URL(string: "sotto://sos") {
-            UIApplication.shared.open(url)
+            await UIApplication.shared.open(url)
         }
         return .result()
     }
@@ -34,7 +34,7 @@ struct StartCheckInIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         if let url = URL(string: "sotto://checkin") {
-            UIApplication.shared.open(url)
+            await UIApplication.shared.open(url)
         }
         return .result()
     }
