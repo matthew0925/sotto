@@ -122,6 +122,7 @@ struct JournalView: View {
                 DatePicker("日時", selection: $date)
                     .datePickerStyle(.compact)
                     .foregroundColor(.safeText)
+                    .environment(\.locale, Locale(identifier: "ja_JP"))
 
                 TextEditor(text: $text)
                     .focused($isTextEditorFocused)
