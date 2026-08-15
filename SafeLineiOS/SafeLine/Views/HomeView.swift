@@ -49,15 +49,12 @@ struct HomeView: View {
 
                 Spacer()
 
+                // #8891 is a support/consultation line, not an emergency dispatch
+                // number — pairing it with 110 on Home implied equal urgency, and
+                // its description drifted out of sync with the 相談窓口 tab's
+                // copy. It already lives there, so Home no longer duplicates it.
                 VStack(spacing: 12) {
                     checkinQuickCard
-                    quickCard(
-                        title: "☎️ #8891 に電話",
-                        desc: "性犯罪・性暴力被害者のためのワンストップ支援センター。24時間365日、通話無料。",
-                        actionTitle: "今すぐ電話"
-                    ) {
-                        callNumber("8891")
-                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
@@ -149,8 +146,8 @@ struct HomeView: View {
         //
         // 110 (police), not #8891: #8891 is a consultation line, not a dispatch
         // number, so an action explicitly framed as "SOS" needs to reach someone
-        // who can actually respond. #8891 stays one tap away via the quick-card
-        // below for anyone who wants support rather than police involvement.
+        // who can actually respond. #8891 lives in 相談窓口 for anyone who wants
+        // support rather than police involvement.
     }
 
     private func callNumber(_ number: String) {
@@ -183,25 +180,6 @@ struct HomeView: View {
                 router.selectedTab = .checkin
             } label: {
                 Text(manager.isActive ? "見守りを確認する" : "設定する")
-                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
-                    .background(Color.safeTeal)
-                    .foregroundColor(Color(red: 0.02, green: 0.13, blue: 0.12))
-                    .cornerRadius(12)
-            }
-        }
-        .padding(16)
-        .background(Color.safeCardFill)
-        .cornerRadius(18)
-    }
-
-    private func quickCard(title: String, desc: String, actionTitle: String, action: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundColor(.safeText)
-            Text(desc).font(.system(size: 14, design: .rounded)).foregroundColor(.safeTextDim)
-            Button(action: action) {
-                Text(actionTitle)
                     .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
