@@ -144,7 +144,15 @@ struct CheckInView: View {
                 MessageComposerView(recipients: manager.contacts.map(\.phoneNumber),
                                      body: manager.contactMessage,
                                      mapsLink: manager.locationManager.mapsLink,
-                                     deadline: manager.endDate)
+                                     deadline: manager.endDate) { result in
+                    // Sending completes the escalation path, so the active
+                    // check-in should not reopen the composer on a later app
+                    // launch. A cancellation or failure keeps it active so
+                    // the person can try again or mark themselves safe.
+                    if result == .sent {
+                        manager.markSafe()
+                    }
+                }
             } else {
                 // This device can't compose SMS at all (no SIM/carrier plan,
                 // Messages disabled, etc.) — previously this just presented an
@@ -434,6 +442,7 @@ struct MessageComposerView: UIViewControllerRepresentable {
     /// since the recipient reads this message at some unknown point after
     /// it's sent, not at the moment it's composed.
     let deadline: Date?
+    let onFinish: (MessageComposeResult) -> Void
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -465,11 +474,18 @@ struct MessageComposerView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: MFMessageComposeViewController, context: Context) {}
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
 
     class Coordinator: NSObject, MFMessageComposeViewControllerDelegate {
+        let onFinish: (MessageComposeResult) -> Void
+
+        init(onFinish: @escaping (MessageComposeResult) -> Void) {
+            self.onFinish = onFinish
+        }
+
         func messageComposeViewController(_ controller: MFMessageComposeViewController,
                                            didFinishWith result: MessageComposeResult) {
+            onFinish(result)
             controller.dismiss(animated: true)
         }
     }
