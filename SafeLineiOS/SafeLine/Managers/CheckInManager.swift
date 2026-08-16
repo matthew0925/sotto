@@ -1,13 +1,16 @@
 import Foundation
 import UserNotifications
 import Combine
+import Security
 
-/// iOS will not let an app silently send an SMS from the background without the user
-/// confirming in the Messages UI. So the "timeout" flow here is:
+/// The app itself cannot silently send an SMS from the background. Its standard
+/// timeout flow is:
 ///   1. Schedule a local notification for `endDate`.
 ///   2. If the user is safe, they cancel before it fires (`markSafe()`).
 ///   3. If it fires, the notification itself carries a one-tap action that opens the
 ///      app straight into the pre-filled SMS compose screen — the fastest path iOS allows.
+/// An optional user-created Apple Shortcuts automation can separately read the
+/// overdue state and message via `GetCheckInAutomationInfoIntent`.
 ///
 /// While a check-in is active, `locationManager` keeps refreshing its fix (see that
 /// class for the background-tracking caveat) so the alert, whenever it's actually
@@ -67,8 +70,10 @@ final class CheckInManager: ObservableObject {
             isActive: isActive,
             isOverdue: isActive && deadline.map { $0 <= now } == true,
             deadline: deadline,
-            recipients: contacts.map(\.phoneNumber).filter { !$0.isEmpty },
-            message: message
+            recipients: isActive && deadline.map { $0 <= now } == true
+                ? contacts.map(\.phoneNumber).filter { !$0.isEmpty }
+                : [],
+            message: isActive && deadline.map { $0 <= now } == true ? message : ""
         )
     }
 
@@ -88,12 +93,16 @@ final class CheckInManager: ObservableObject {
     @Published var contacts: [EmergencyContact] {
         didSet {
             if let data = try? JSONEncoder().encode(contacts) {
-                KeychainStore.set(data, for: Self.contactsKey)
+                KeychainStore.set(data, for: Self.contactsKey,
+                                  accessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
             }
         }
     }
     @Published var contactMessage: String {
-        didSet { KeychainStore.setString(contactMessage, for: Self.messageKey) }
+        didSet {
+            KeychainStore.setString(contactMessage, for: Self.messageKey,
+                                    accessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+        }
     }
 
     /// Set to true when the user taps "連絡先に知らせる" on the timeout notification.
@@ -173,6 +182,16 @@ final class CheckInManager: ObservableObject {
         let savedDuration = UserDefaults.standard.object(forKey: Self.dailyReminderDurationKey) as? Int ?? 30
         dailyReminderDurationMinutes = savedDuration
 
+        // Shortcuts automations commonly run while the screen is locked.
+        // Migrate existing check-in values from WhenUnlocked to
+        // AfterFirstUnlock while retaining ThisDeviceOnly (no Keychain sync).
+        if let data = try? JSONEncoder().encode(contacts) {
+            KeychainStore.set(data, for: Self.contactsKey,
+                              accessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+        }
+        KeychainStore.setString(contactMessage, for: Self.messageKey,
+                                accessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+
         registerNotificationCategories()
 
         // Forward LocationManager's own @Published changes so views that only
@@ -249,6 +268,7 @@ final class CheckInManager: ObservableObject {
         ticker?.invalidate()
         didRequestComposerForCurrentTimeout = false
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notificationId])
         locationManager.stopTracking()
         UserDefaults.standard.removeObject(forKey: Self.activeKey)
         UserDefaults.standard.removeObject(forKey: Self.endDateKey)
@@ -256,8 +276,11 @@ final class CheckInManager: ObservableObject {
 
     /// Called from the notification action, or from a manual "今すぐ連絡先に知らせる"
     /// button while a check-in is active.
-    func requestSendAlert() {
+    @discardableResult
+    func requestSendAlert() -> Bool {
+        guard isActive else { return false }
         wantsToSendAlert = true
+        return true
     }
 
     /// Called when the daily reminder notification (or its "見守りを開く" action)
@@ -290,7 +313,7 @@ final class CheckInManager: ObservableObject {
                         self.scheduleTimeoutNotification(at: date, settings: refreshed)
                     }
                 }
-            case .authorized:
+            case .authorized, .provisional, .ephemeral:
                 self.scheduleTimeoutNotification(at: date, settings: settings)
             default:
                 self.finishStartWithError("通知が許可されていないため、見守りを開始できません。設定アプリで通知を許可してください。")

@@ -20,7 +20,13 @@ struct SupportAction: Codable, Identifiable {
 
     var actionURL: URL? {
         switch type {
-        case "tel": return URL(string: "tel:\(value)")
+        case "tel":
+            // `#` starts a URL fragment unless percent-encoded, which would
+            // silently turn official short codes such as #8891 into the wrong
+            // destination. Strip visual separators and encode the hash.
+            let dialable = value.filter { "0123456789+#*".contains($0) }
+            guard !dialable.isEmpty else { return nil }
+            return URL(string: "tel:\(dialable.replacingOccurrences(of: "#", with: "%23"))")
         case "url": return URL(string: value)
         default: return nil
         }

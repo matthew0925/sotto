@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import CoreGraphics
 @testable import Sotto
 
 final class JournalExporterTests: XCTestCase {
@@ -34,5 +35,19 @@ final class JournalExporterTests: XCTestCase {
         )
 
         XCTAssertGreaterThan(withPhoto.count, textOnly.count)
+    }
+
+    func testVeryLongEntrySpansMultiplePDFPagesWithoutBeingClipped() throws {
+        let longText = String(repeating: "長い記録が途中で欠けないことを確認します。\n", count: 500)
+        let entry = JournalEntry(
+            id: UUID(), date: Date(), text: longText, createdAt: Date(), contentHash: "hash"
+        )
+
+        let data = JournalExporter.makePDF(entries: [entry])
+        guard let provider = CGDataProvider(data: data as CFData),
+              let document = CGPDFDocument(provider) else {
+            return XCTFail("Generated data must be a readable PDF")
+        }
+        XCTAssertGreaterThan(document.numberOfPages, 2)
     }
 }

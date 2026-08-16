@@ -30,9 +30,17 @@ final class SupportResourceTests: XCTestCase {
         let plus = resources.first { $0.title == "DV相談＋（プラス）" }
 
         XCTAssertEqual(navigation?.actions.map(\.type), ["tel"])
-        XCTAssertEqual(navigation?.actions.first?.value, "8008")
+        XCTAssertEqual(navigation?.actions.first?.value, "#8008")
+        XCTAssertEqual(navigation?.actions.first?.actionURL?.absoluteString, "tel:%238008")
         XCTAssertEqual(Set(plus?.actions.map(\.type) ?? []), Set(["tel", "url"]))
         XCTAssertFalse(plus?.actions.contains { $0.label.contains("メール") } ?? true,
                        "DV相談＋ ended email consultation in FY2025")
+    }
+
+    func testOfficialShortDialCodesKeepTheirHashWhenBuildingPhoneURLs() {
+        let resources = SupportResourceLoader.load()
+        let oneStop = resources.first { $0.title.contains("#8891") }
+        XCTAssertEqual(oneStop?.actions.first?.value, "#8891")
+        XCTAssertEqual(oneStop?.actions.first?.actionURL?.absoluteString, "tel:%238891")
     }
 }

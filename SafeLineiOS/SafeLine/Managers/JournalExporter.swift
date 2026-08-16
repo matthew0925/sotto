@@ -24,6 +24,72 @@ enum JournalExporter {
         return renderer.pdfData { context in
             context.beginPage()
             var y: CGFloat = margin
+            let contentWidth = pageWidth - margin * 2
+            let pageBottom = pageHeight - margin
+
+            func beginNewPage() {
+                context.beginPage()
+                y = margin
+            }
+
+            /// Draw every character, splitting very long entries across pages.
+            /// A single Text.draw(rect:) silently clips when its measured height
+            /// is taller than one PDF page.
+            func drawPaginatedBody(_ text: String) {
+                let source = text as NSString
+                var offset = 0
+                let attributes: [NSAttributedString.Key: Any] = [.font: bodyFont]
+
+                while offset < source.length {
+                    if pageBottom - y < bodyFont.lineHeight {
+                        beginNewPage()
+                    }
+                    let availableHeight = pageBottom - y
+                    var low = 1
+                    var high = source.length - offset
+                    var fittingLength = 1
+
+                    while low <= high {
+                        let middle = (low + high) / 2
+                        let candidateRange = source.rangeOfComposedCharacterSequences(
+                            for: NSRange(location: offset, length: middle)
+                        )
+                        let candidate = source.substring(with: candidateRange) as NSString
+                        let height = ceil(candidate.boundingRect(
+                            with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
+                            options: [.usesLineFragmentOrigin, .usesFontLeading],
+                            attributes: attributes,
+                            context: nil
+                        ).height)
+                        if height <= availableHeight {
+                            fittingLength = candidateRange.length
+                            low = middle + 1
+                        } else {
+                            high = middle - 1
+                        }
+                    }
+
+                    let range = source.rangeOfComposedCharacterSequences(
+                        for: NSRange(location: offset, length: fittingLength)
+                    )
+                    let chunk = source.substring(with: range) as NSString
+                    let chunkHeight = ceil(chunk.boundingRect(
+                        with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
+                        options: [.usesLineFragmentOrigin, .usesFontLeading],
+                        attributes: attributes,
+                        context: nil
+                    ).height)
+                    chunk.draw(
+                        with: CGRect(x: margin, y: y, width: contentWidth, height: chunkHeight),
+                        options: [.usesLineFragmentOrigin, .usesFontLeading],
+                        attributes: attributes,
+                        context: nil
+                    )
+                    y += chunkHeight
+                    offset = NSMaxRange(range)
+                    if offset < source.length { beginNewPage() }
+                }
+            }
 
             let title = "そっと — 記録のエクスポート"
             title.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: titleFont])
@@ -49,30 +115,25 @@ enum JournalExporter {
 
             for entry in entries {
                 let dateString = DateFormatter.localizedString(from: entry.date, dateStyle: .medium, timeStyle: .short)
-                let bodyRect = CGRect(x: margin, y: 0, width: pageWidth - margin * 2, height: .greatestFiniteMagnitude)
                 let bodySize = (entry.text as NSString).boundingRect(
-                    with: bodyRect.size,
+                    with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
                     options: [.usesLineFragmentOrigin, .usesFontLeading],
                     attributes: [.font: bodyFont],
                     context: nil
                 )
-                let entryHeight = 16 + bodySize.height + 14 + 18
+                let entryHeight = 16 + min(bodySize.height, pageBottom - margin) + 14 + 18
 
-                if y + entryHeight > pageHeight - margin {
-                    context.beginPage()
-                    y = margin
+                if y + entryHeight > pageBottom {
+                    beginNewPage()
                 }
 
                 dateString.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: dateFont, .foregroundColor: UIColor.darkGray])
                 y += 16
 
-                entry.text.draw(
-                    with: CGRect(x: margin, y: y, width: pageWidth - margin * 2, height: bodySize.height),
-                    options: [.usesLineFragmentOrigin, .usesFontLeading],
-                    attributes: [.font: bodyFont],
-                    context: nil
-                )
-                y += bodySize.height + 4
+                drawPaginatedBody(entry.text)
+                y += 4
+
+                if y + 18 > pageBottom { beginNewPage() }
 
                 let createdString = DateFormatter.localizedString(from: entry.createdAt, dateStyle: .short, timeStyle: .medium)
                 let hashLine = "作成: \(createdString)   SHA-256: \(entry.contentHash)"
@@ -86,9 +147,8 @@ enum JournalExporter {
                         let scale = min(maxPhotoWidth / image.size.width, maxPhotoHeight / image.size.height, 1)
                         let photoSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
 
-                        if y + photoSize.height + 24 > pageHeight - margin {
-                            context.beginPage()
-                            y = margin
+                        if y + photoSize.height + 24 > pageBottom {
+                            beginNewPage()
                         }
 
                         image.draw(in: CGRect(x: margin, y: y, width: photoSize.width, height: photoSize.height))

@@ -82,8 +82,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         case CheckInManager.safeActionId:
             checkInManager.markSafe()
         case CheckInManager.sendActionId:
-            checkInManager.requestSendAlert()
-            navigateToCheckIn()
+            if checkInManager.requestSendAlert() { navigateToCheckIn() }
         case CheckInManager.startCheckinActionId:
             checkInManager.requestStartCheckin()
             navigateToCheckIn()
@@ -92,8 +91,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 checkInManager.requestStartCheckin()
                 navigateToCheckIn()
             } else if category == CheckInManager.timeoutCategoryId {
-                checkInManager.requestSendAlert()
-                navigateToCheckIn()
+                if checkInManager.requestSendAlert() { navigateToCheckIn() }
             }
         default:
             break

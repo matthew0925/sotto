@@ -129,13 +129,28 @@ final class CheckInManagerTests: XCTestCase {
         XCTAssertTrue(overdue.message.contains("見守りの目安時刻"))
 
         UserDefaults.standard.set(false, forKey: "sotto.checkin.active")
-        XCTAssertFalse(CheckInManager.automationSnapshot().isOverdue)
+        let inactive = CheckInManager.automationSnapshot()
+        XCTAssertFalse(inactive.isOverdue)
+        XCTAssertTrue(inactive.recipients.isEmpty)
+        XCTAssertTrue(inactive.message.isEmpty)
     }
 }
 
 final class NotificationRoutingTests: XCTestCase {
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.active")
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.endDate")
+        super.tearDown()
+    }
+
+    private func makeActiveDelegate() -> AppDelegate {
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        return AppDelegate()
+    }
+
     func testSendActionNavigatesAndRequestsComposer() {
-        let delegate = AppDelegate()
+        let delegate = makeActiveDelegate()
         let router = AppRouter()
         delegate.router = router
 
@@ -147,7 +162,7 @@ final class NotificationRoutingTests: XCTestCase {
     }
 
     func testColdLaunchDefersNavigationUntilRouterExists() {
-        let delegate = AppDelegate()
+        let delegate = makeActiveDelegate()
 
         delegate.handleNotificationAction(identifier: CheckInManager.sendActionId,
                                           category: CheckInManager.timeoutCategoryId)
@@ -159,7 +174,7 @@ final class NotificationRoutingTests: XCTestCase {
     }
 
     func testDefaultTimeoutTapNavigatesAndRequestsComposer() {
-        let delegate = AppDelegate()
+        let delegate = makeActiveDelegate()
         let router = AppRouter()
         delegate.router = router
 
@@ -168,5 +183,16 @@ final class NotificationRoutingTests: XCTestCase {
 
         XCTAssertEqual(router.selectedTab, .checkin)
         XCTAssertTrue(delegate.checkInManager.wantsToSendAlert)
+    }
+
+    func testStaleTimeoutActionDoesNotRequestComposer() {
+        let delegate = AppDelegate()
+        let router = AppRouter()
+        delegate.router = router
+
+        delegate.handleNotificationAction(identifier: CheckInManager.sendActionId,
+                                          category: CheckInManager.timeoutCategoryId)
+
+        XCTAssertFalse(delegate.checkInManager.wantsToSendAlert)
     }
 }

@@ -3,19 +3,26 @@ import Security
 
 /// Minimal Keychain wrapper for small values that must never leave this device:
 /// the check-in contact/message, and the journal's AES key.
-/// `.whenUnlockedThisDeviceOnly` keeps values off iCloud Keychain sync.
+/// `ThisDeviceOnly` accessibility classes keep values off iCloud Keychain sync.
 enum KeychainStore {
     @discardableResult
     static func set(_ data: Data, for key: String,
                      accessible: CFString = kSecAttrAccessibleWhenUnlockedThisDeviceOnly) -> Bool {
-        delete(key)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key,
+            kSecAttrAccount as String: key
+        ]
+        let attributes: [String: Any] = [
             kSecValueData as String: data,
             kSecAttrAccessible as String: accessible
         ]
-        return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if updateStatus == errSecSuccess { return true }
+        guard updateStatus == errSecItemNotFound else { return false }
+
+        var newItem = query
+        attributes.forEach { newItem[$0.key] = $0.value }
+        return SecItemAdd(newItem as CFDictionary, nil) == errSecSuccess
     }
 
     static func get(_ key: String) -> Data? {
@@ -40,8 +47,9 @@ enum KeychainStore {
     }
 
     @discardableResult
-    static func setString(_ value: String, for key: String) -> Bool {
-        set(Data(value.utf8), for: key)
+    static func setString(_ value: String, for key: String,
+                          accessible: CFString = kSecAttrAccessibleWhenUnlockedThisDeviceOnly) -> Bool {
+        set(Data(value.utf8), for: key, accessible: accessible)
     }
 
     static func getString(_ key: String) -> String? {

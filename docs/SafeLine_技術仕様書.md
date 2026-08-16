@@ -69,16 +69,17 @@
 | 長押しSOS | `LongPressGesture` + `DragGesture(minimumDistance:0)` で押下中の経過時間を計測 | 誤操作防止のため最小1.2〜1.5秒。`UIImpactFeedbackGenerator`で振動フィードバック |
 | 電話発信 | `UIApplication.shared.open(URL(string:"tel://8891")!)` | Info.plistに`LSApplicationQueriesSchemes`は不要（telは標準） |
 | SMS送信 | `MFMessageComposeViewController`（アプリ内で確認画面を出す） | **iOSはバックグラウンドからの無確認自動送信を許可しない**。タイムアウト時は通知を出し、ユーザーがワンタップで送信確定する設計にする（後述） |
-| チェックインタイマー | `BGAppRefreshTask` + ローカル通知（`UNUserNotificationCenter`） | iOSはバックグラウンド実行時間が保証されないため、**確実性を担保するにはローカル通知でユーザーに送信確定を促す方式が現実的** |
+| チェックインタイマー | ローカル通知（`UNUserNotificationCenter`） | バックグラウンド実行時間に依存せず、期限時刻の通知をOSへ事前登録する |
 | 位置情報 | `CLLocationManager`、`when-in-use`権限のみ要求 | 常時位置情報権限（Always）はApple審査で厳しく問われるため、SOS発火時のみ取得する設計を推奨 |
 | 暗号化ジャーナル | `Core Data` + `NSFileProtectionComplete` もしくは `SQLCipher` | 端末ロック時は復号不可にする（`NSFileProtectionComplete`が簡便） |
-| 連絡先の保存 | `Keychain Services`（`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`） | iCloudキーチェーン同期はオフに |
+| 連絡先の保存 | `Keychain Services`（`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`） | 端末再起動後の初回ロック解除以降はロック中のショートカットから取得可能。iCloudキーチェーン同期はオフ |
 
 ### iOSでの重要な制約
-Appleは「バックグラウンドで無確認のままメッセージを自動送信する」ことを許可していません。
-これは安全上の設計課題であり、**「タイムアウトしたら即座に自動送信」ではなく、
-「タイムアウトしたら最優先の通知＋ロック画面からワンタップで送信確定」**という形に
-UXを調整する必要があります。この制約はPRD段階でユーザーに正直に伝えるべきです。
+通常のiOSアプリは、`MFMessageComposeViewController`を使って確認なしにSMSを送信できません。
+標準導線は「期限通知＋SMS作成画面」で、利用者が送信を確定します。任意機能として、利用者自身が
+Apple純正「ショートカット」でパーソナルオートメーションを作成した場合に限り、App Intentから
+期限超過状態・宛先・本文を渡して自動送信を構成できます。アプリからオートメーションや実行時刻を
+自動作成・変更することはできません。
 
 ---
 

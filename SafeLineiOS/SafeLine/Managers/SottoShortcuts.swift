@@ -1,13 +1,12 @@
 import AppIntents
 import SwiftUI
 
-/// Siri / Shortcuts / Action Button entry points. Both intents only open the
+/// Siri / Shortcuts / Action Button entry points. The screen-opening intents only open the
 /// app to the relevant screen via the existing `sotto://` deep link — the
 /// same mechanism SottoWidget already uses — rather than sending an alert or
-/// starting a check-in on their own. Every alert-sending action in this app
-/// requires an explicit human tap once the screen is open; voice/Shortcuts
-/// invocation is a faster way to *reach* that screen hands-free, not a way
-/// to skip the confirmation step.
+/// starting a check-in on their own. The read-only automation intent below
+/// exposes overdue state and SMS fields to a personal automation explicitly
+/// created and authorized by the user in Apple's Shortcuts app.
 struct OpenSottoIntent: AppIntent {
     static var title: LocalizedStringResource = "そっとを開く"
     static var description = IntentDescription(
