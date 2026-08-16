@@ -346,6 +346,8 @@ struct AboutSottoView: View {
                 Text("記録をPDFへ書き出す際は、添付写真を含めるか文章だけにするか選べます。写真を含む場合も含めない場合も、書き出したPDFは暗号化されません。")
                 Text("PDFとして書き出した記録や、メッセージ・メールなどで共有した内容はアプリの保護対象外です。共有先と保存場所を必ず確認してください。")
                     .foregroundColor(.safeCoral)
+                Text("自動SMSショートカットを設定した場合、見守りの終了時刻・連絡先・メッセージ本文はApple純正のショートカットへ渡され、そっとの保護対象外になります。")
+                    .foregroundColor(.safeCoral)
             } header: {
                 Text("データの保存について")
             }

@@ -14,6 +14,13 @@ import Combine
 /// sent, carries a location close to real-time rather than a stale one from when
 /// the timer started.
 final class CheckInManager: ObservableObject {
+    struct AutomationSnapshot {
+        let isActive: Bool
+        let isOverdue: Bool
+        let deadline: Date?
+        let recipients: [String]
+        let message: String
+    }
     static let timeoutCategoryId = "CHECKIN_TIMEOUT"
     static let sendActionId = "SEND_ALERT"
     static let safeActionId = "IM_SAFE"
@@ -34,6 +41,43 @@ final class CheckInManager: ObservableObject {
     private static let dailyReminderNotificationId = "safeline.checkin.dailyReminder"
     private static let activeKey = "sotto.checkin.active"
     private static let endDateKey = "sotto.checkin.endDate"
+
+    /// Read-only bridge used by App Intents. Shortcuts can ask Sotto for the
+    /// latest deadline and message at run time, so ending a check-in prevents
+    /// a previously configured automation from sending stale information.
+    static func automationSnapshot(now: Date = Date()) -> AutomationSnapshot {
+        let isActive = UserDefaults.standard.bool(forKey: activeKey)
+        let deadline = UserDefaults.standard.object(forKey: endDateKey) as? Date
+        let contacts: [EmergencyContact]
+        if let data = KeychainStore.get(contactsKey),
+           let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
+            contacts = decoded
+        } else {
+            contacts = []
+        }
+
+        let savedMessage = KeychainStore.getString(messageKey) ?? ""
+        var message = savedMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        if message.isEmpty { message = defaultContactMessage }
+        if let deadline {
+            message += "\n（見守りの目安時刻: \(automationTimeFormatter.string(from: deadline))）"
+        }
+
+        return AutomationSnapshot(
+            isActive: isActive,
+            isOverdue: isActive && deadline.map { $0 <= now } == true,
+            deadline: deadline,
+            recipients: contacts.map(\.phoneNumber).filter { !$0.isEmpty },
+            message: message
+        )
+    }
+
+    private static let automationTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日 H:mm"
+        return formatter
+    }()
 
     @Published var isActive: Bool = false
     @Published var endDate: Date?

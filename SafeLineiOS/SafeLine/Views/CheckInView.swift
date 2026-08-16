@@ -1,11 +1,13 @@
 import SwiftUI
 import MessageUI
+import AppIntents
 
 struct CheckInView: View {
     @EnvironmentObject var manager: CheckInManager
     @EnvironmentObject var router: AppRouter
     @State private var selectedMinutes: Int = 30
     @State private var showingMessageComposer = false
+    @State private var showingAutomationGuide = false
     @State private var newContactName = ""
     @State private var newContactPhone = ""
     /// Set while editing an existing contact (tapped its row) rather than
@@ -45,13 +47,26 @@ struct CheckInView: View {
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
-                    Label("SMSは自動送信されません。作成画面で内容を確認し、送信を押してください。", systemImage: "hand.tap")
+                    Label("通常はSMS作成画面で送信を押します。自動送信は下のショートカット設定が必要です。", systemImage: "hand.tap")
                         .font(.system(size: 12.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.safeCardFill)
                         .cornerRadius(10)
+
+                    Button {
+                        showingAutomationGuide = true
+                    } label: {
+                        Label("自動SMSショートカットを設定", systemImage: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                            .background(Color.safeTeal.opacity(0.14))
+                            .foregroundColor(.safeTeal)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
 
                     timerDisplay
 
@@ -161,6 +176,9 @@ struct CheckInView: View {
                 // Offer an immediate fallback instead of a dead end.
                 SMSUnavailableView(contacts: manager.contacts)
             }
+        }
+        .sheet(isPresented: $showingAutomationGuide) {
+            AutomaticSMSGuideView()
         }
         .onChange(of: manager.wantsToSendAlert) { wants in
             if wants {
@@ -385,6 +403,61 @@ struct CheckInView: View {
         let m = Int(seconds) / 60
         let s = Int(seconds) % 60
         return String(format: "%02d:%02d", m, s)
+    }
+}
+
+private struct AutomaticSMSGuideView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("そっとが設定済みの終了時刻・送信先・本文をショートカットへ渡し、期限を過ぎた場合だけSMSを送る構成にできます。")
+                } footer: {
+                    Text("初回のみ、Apple純正のショートカットアプリでオートメーションの作成と「すぐに実行」の選択が必要です。")
+                }
+
+                Section("設定手順") {
+                    automationStep(1, "下のボタンから「そっと」のショートカットを開きます。")
+                    automationStep(2, "オートメーションで時刻または専用アラームをトリガーにします。")
+                    automationStep(3, "「見守り情報を取得」を追加し、「期限超過」が真の場合だけ「メッセージを送信」を実行します。")
+                    automationStep(4, "送信先に「送信先」、本文に「メッセージ」を指定し、「すぐに実行」を選びます。")
+                }
+
+                Section {
+                    ShortcutsLink()
+                        .shortcutsLinkStyle(.light)
+                } footer: {
+                    Text("見守りを終了すると「期限超過」は偽になるため、SMS送信条件を満たしません。ショートカットへ渡した連絡先と本文は、そっとの保護対象外です。")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.safeInk)
+            .navigationTitle("自動SMSの設定")
+            .navigationBarTitleDisplayMode(.inline)
+            .tint(.safeTeal)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("閉じる") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func automationStep(_ number: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundColor(.safeOnAccent)
+                .frame(width: 26, height: 26)
+                .background(Color.safeTeal)
+                .clipShape(Circle())
+            Text(text)
+                .font(.system(size: 14, design: .rounded))
+                .foregroundColor(.safeText)
+        }
+        .padding(.vertical, 3)
     }
 }
 

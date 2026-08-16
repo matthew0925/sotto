@@ -112,6 +112,25 @@ final class CheckInManagerTests: XCTestCase {
         XCTAssertFalse(reloaded.isActive)
         XCTAssertNil(reloaded.endDate)
     }
+
+    func testAutomationSnapshotReturnsSavedDataOnlyWhenOverdue() throws {
+        let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        KeychainStore.setString("帰宅していません。", for: "sotto.checkin.message")
+        let deadline = Date().addingTimeInterval(-60)
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(deadline, forKey: "sotto.checkin.endDate")
+
+        let overdue = CheckInManager.automationSnapshot()
+        XCTAssertTrue(overdue.isActive)
+        XCTAssertTrue(overdue.isOverdue)
+        XCTAssertEqual(overdue.recipients, ["09011112222"])
+        XCTAssertTrue(overdue.message.contains("帰宅していません。"))
+        XCTAssertTrue(overdue.message.contains("見守りの目安時刻"))
+
+        UserDefaults.standard.set(false, forKey: "sotto.checkin.active")
+        XCTAssertFalse(CheckInManager.automationSnapshot().isOverdue)
+    }
 }
 
 final class NotificationRoutingTests: XCTestCase {
