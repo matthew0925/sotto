@@ -446,7 +446,7 @@ struct MessageComposerView: UIViewControllerRepresentable {
         vc.recipients = recipients
         let enteredMessage = body.trimmingCharacters(in: .whitespacesAndNewlines)
         var text = enteredMessage.isEmpty ? CheckInManager.defaultContactMessage : enteredMessage
-        if let deadline, deadline > Date() {
+        if let deadline {
             // The user's own message (e.g. "時間までに連絡がなければ確認して。")
             // already asks for the same thing in their own words — repeating
             // "連絡がなければ確認してください" here just duplicates it. This adds

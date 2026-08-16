@@ -107,15 +107,29 @@ struct SettingsView: View {
                             .font(.system(size: 15, design: .rounded))
                             .foregroundColor(.safeText)
                         Spacer()
-                        Picker("更新間隔", selection: Binding(
-                            get: { checkInManager.locationManager.updateInterval },
-                            set: { checkInManager.locationManager.updateInterval = $0 }
-                        )) {
+                        Menu {
                             ForEach(intervalOptions, id: \.seconds) { option in
-                                Text(option.label).tag(option.seconds)
+                                Button {
+                                    checkInManager.locationManager.updateInterval = option.seconds
+                                } label: {
+                                    if option.seconds == checkInManager.locationManager.updateInterval {
+                                        Label(option.label, systemImage: "checkmark")
+                                    } else {
+                                        Text(option.label)
+                                    }
+                                }
                             }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(selectedIntervalLabel)
+                                    .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 9, weight: .semibold))
+                            }
+                            .foregroundColor(.safeTeal)
                         }
-                        .tint(.safeTeal)
+                        .accessibilityLabel("更新間隔")
+                        .accessibilityValue(selectedIntervalLabel)
                     }
                 } header: {
                     Text("見守り")
@@ -209,6 +223,12 @@ struct SettingsView: View {
         case .notDetermined: return "未確認"
         @unknown default: return "確認できません"
         }
+    }
+
+    private var selectedIntervalLabel: String {
+        intervalOptions.first {
+            $0.seconds == checkInManager.locationManager.updateInterval
+        }?.label ?? "設定済み"
     }
 
     private var locationStatusText: String {
@@ -351,7 +371,14 @@ struct ShortcutGuideView: View {
             }
 
             Section {
-                ShortcutsLink()
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("下のボタンから「そっと」のショートカット一覧を開けます。")
+                        .font(.system(size: 13.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
+                    ShortcutsLink()
+                        .shortcutsLinkStyle(.light)
+                }
+                .padding(.vertical, 6)
             } header: {
                 Text("ショートカットアプリ")
             } footer: {

@@ -90,6 +90,17 @@ final class CheckInManagerTests: XCTestCase {
         restored.markSafe()
     }
 
+    func testOverdueCheckInRequestsComposerAfterProcessRelaunch() {
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+
+        let restored = CheckInManager()
+
+        XCTAssertTrue(restored.isActive)
+        XCTAssertTrue(restored.wantsToSendAlert)
+        restored.markSafe()
+    }
+
     func testMarkSafeClearsPersistedActiveState() {
         UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
         UserDefaults.standard.set(Date().addingTimeInterval(600), forKey: "sotto.checkin.endDate")
@@ -128,7 +139,7 @@ final class NotificationRoutingTests: XCTestCase {
         XCTAssertTrue(delegate.checkInManager.wantsToSendAlert)
     }
 
-    func testDefaultTimeoutTapNavigatesToCheckIn() {
+    func testDefaultTimeoutTapNavigatesAndRequestsComposer() {
         let delegate = AppDelegate()
         let router = AppRouter()
         delegate.router = router
@@ -137,5 +148,6 @@ final class NotificationRoutingTests: XCTestCase {
                                           category: CheckInManager.timeoutCategoryId)
 
         XCTAssertEqual(router.selectedTab, .checkin)
+        XCTAssertTrue(delegate.checkInManager.wantsToSendAlert)
     }
 }

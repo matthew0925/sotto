@@ -92,6 +92,9 @@ final class CheckInManager: ObservableObject {
     let locationManager = LocationManager()
 
     private var ticker: Timer?
+    /// Prevents the foreground ticker from repeatedly asking the view to
+    /// present the composer after the deadline has elapsed.
+    private var didRequestComposerForCurrentTimeout = false
     private let notificationId = "safeline.checkin.timeout"
     private var cancellables = Set<AnyCancellable>()
 
@@ -145,6 +148,10 @@ final class CheckInManager: ObservableObject {
             isActive = true
             endDate = savedEndDate
             remainingSeconds = max(0, savedEndDate.timeIntervalSinceNow)
+            if savedEndDate <= Date() {
+                wantsToSendAlert = true
+                didRequestComposerForCurrentTimeout = true
+            }
             startTicker()
             locationManager.startTracking()
         }
@@ -196,6 +203,7 @@ final class CheckInManager: ObservableObject {
         endDate = nil
         remainingSeconds = 0
         ticker?.invalidate()
+        didRequestComposerForCurrentTimeout = false
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
         locationManager.stopTracking()
         UserDefaults.standard.removeObject(forKey: Self.activeKey)
@@ -279,6 +287,7 @@ final class CheckInManager: ObservableObject {
                 self.endDate = date
                 self.remainingSeconds = max(0, date.timeIntervalSinceNow)
                 self.isActive = true
+                self.didRequestComposerForCurrentTimeout = false
                 UserDefaults.standard.set(true, forKey: Self.activeKey)
                 UserDefaults.standard.set(date, forKey: Self.endDateKey)
                 self.startTicker()
@@ -321,6 +330,10 @@ final class CheckInManager: ObservableObject {
             self.remainingSeconds = max(0, end.timeIntervalSinceNow)
             if self.remainingSeconds <= 0 {
                 self.ticker?.invalidate()
+                if !self.didRequestComposerForCurrentTimeout {
+                    self.didRequestComposerForCurrentTimeout = true
+                    self.requestSendAlert()
+                }
             }
         }
     }

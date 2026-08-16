@@ -92,6 +92,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 checkInManager.requestStartCheckin()
                 navigateToCheckIn()
             } else if category == CheckInManager.timeoutCategoryId {
+                checkInManager.requestSendAlert()
                 navigateToCheckIn()
             }
         default:
