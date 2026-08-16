@@ -12,6 +12,7 @@ struct JournalView: View {
     @State private var selectedPhotoData: Data?
     @State private var shareItem: ShareItem?
     @State private var showingExportOptions = false
+    @State private var showingExportGuide = false
     @State private var exportErrorMessage: String?
     @State private var temporaryExportURL: URL?
     /// Bound to the memo TextEditor. Tapping another tab does NOT
@@ -43,6 +44,16 @@ struct JournalView: View {
         }
         .sheet(item: $shareItem, onDismiss: removeTemporaryExport) { item in
             ActivityView(activityItems: [item.url])
+        }
+        .sheet(isPresented: $showingExportGuide) {
+            NavigationStack {
+                PDFExportGuideView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("閉じる") { showingExportGuide = false }
+                        }
+                    }
+            }
         }
         .confirmationDialog("PDFに写真を含めますか？", isPresented: $showingExportOptions, titleVisibility: .visible) {
             Button("写真を含める") { exportPDF(includePhotos: true) }
@@ -151,6 +162,8 @@ struct JournalView: View {
                     .foregroundColor(.safeOnAccent)
                     .cornerRadius(12)
             }
+
+            pdfExportGuideButton
         }
     }
 
@@ -167,6 +180,8 @@ struct JournalView: View {
                 Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末の中だけに残ります。誰にも見せなくて大丈夫です。あなたのための記録です。")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.safeTextDim)
+
+                pdfExportGuideButton
 
                 DatePicker("日時", selection: $date)
                     .datePickerStyle(.compact)
@@ -232,6 +247,18 @@ struct JournalView: View {
             .padding(20)
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    private var pdfExportGuideButton: some View {
+        Button {
+            isTextEditorFocused = false
+            showingExportGuide = true
+        } label: {
+            Label("PDF書き出しの使い方", systemImage: "doc.richtext")
+                .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                .foregroundColor(.safeTeal)
+        }
+        .accessibilityIdentifier("journal.pdfGuide")
     }
 
     private var photoPickerRow: some View {

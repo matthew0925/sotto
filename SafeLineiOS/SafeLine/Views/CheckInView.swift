@@ -58,11 +58,26 @@ struct CheckInView: View {
                     contactsSection
 
                     field(title: "伝えたいメッセージ") {
-                        TextEditor(text: $manager.contactMessage)
-                            .focused($focusedField, equals: .message)
-                            .frame(height: 70)
+                        ZStack(alignment: .topLeading) {
+                            if manager.contactMessage.isEmpty {
+                                Text("例：見守りをお願いしています。連絡が取れない場合は、電話で確認してください。")
+                                    .font(.system(size: 14, design: .rounded))
+                                    .foregroundColor(.safeTextFaint)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 8)
+                                    .allowsHitTesting(false)
+                            }
+                            TextEditor(text: $manager.contactMessage)
+                                .focused($focusedField, equals: .message)
+                                .scrollContentBackground(.hidden)
+                                .frame(height: 70)
+                        }
                     }
                     .disabled(manager.isActive)
+
+                    Text("この文は編集できます。目安時刻と現在地は、知らせるときに自動で追加されます。")
+                        .font(.system(size: 12.5, design: .rounded))
+                        .foregroundColor(.safeTextFaint)
 
                     Button(action: primaryAction) {
                         Text(manager.isActive ? "無事です（見守りを終える）" : manager.isStarting ? "通知を確認しています…" : "この内容で見守りをはじめる")
@@ -421,7 +436,8 @@ struct MessageComposerView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> MFMessageComposeViewController {
         let vc = MFMessageComposeViewController()
         vc.recipients = recipients
-        var text = body
+        let enteredMessage = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        var text = enteredMessage.isEmpty ? CheckInManager.defaultContactMessage : enteredMessage
         if let deadline, deadline > Date() {
             // The user's own message (e.g. "時間までに連絡がなければ確認して。")
             // already asks for the same thing in their own words — repeating

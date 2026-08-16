@@ -124,17 +124,6 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.safeCardFill)
 
-                Section("記録") {
-                    NavigationLink {
-                        PDFExportGuideView()
-                    } label: {
-                        Label("PDF書き出しの使い方", systemImage: "doc.richtext")
-                            .font(.system(size: 15, design: .rounded))
-                            .foregroundColor(.safeText)
-                    }
-                }
-                .listRowBackground(Color.safeCardFill)
-
                 Section("このアプリについて") {
                     NavigationLink {
                         AboutSottoView(onReplayOnboarding: {

@@ -25,6 +25,8 @@ final class CheckInManager: ObservableObject {
     /// already has a single saved contact into the new array format.
     private static let legacyContactKey = "sotto.checkin.contact"
     private static let messageKey = "sotto.checkin.message"
+    static let defaultContactMessage = "見守りをお願いしています。連絡が取れない場合は、電話で確認してください。"
+    private static let legacyDefaultContactMessage = "◯◯からの帰り道。時間までに連絡がなければ確認して。"
     private static let dailyReminderEnabledKey = "sotto.checkin.dailyReminder.enabled"
     private static let dailyReminderHourKey = "sotto.checkin.dailyReminder.hour"
     private static let dailyReminderMinuteKey = "sotto.checkin.dailyReminder.minute"
@@ -105,8 +107,12 @@ final class CheckInManager: ObservableObject {
             contacts = []
         }
 
-        contactMessage = KeychainStore.getString(Self.messageKey)
-            ?? "◯◯からの帰り道。時間までに連絡がなければ確認して。"
+        let savedMessage = KeychainStore.getString(Self.messageKey)
+        if savedMessage == nil || savedMessage == Self.legacyDefaultContactMessage {
+            contactMessage = Self.defaultContactMessage
+        } else {
+            contactMessage = savedMessage ?? Self.defaultContactMessage
+        }
 
         dailyReminderEnabled = UserDefaults.standard.bool(forKey: Self.dailyReminderEnabledKey)
         let savedHour = UserDefaults.standard.object(forKey: Self.dailyReminderHourKey) as? Int ?? 21
@@ -211,7 +217,7 @@ final class CheckInManager: ObservableObject {
     func eraseSavedData() {
         markSafe()
         contacts = []
-        contactMessage = "◯◯からの帰り道。時間までに連絡がなければ確認して。"
+        contactMessage = Self.defaultContactMessage
         dailyReminderEnabled = false
     }
 

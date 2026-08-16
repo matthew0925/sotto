@@ -46,7 +46,7 @@ final class CheckInManagerTests: XCTestCase {
         manager.eraseSavedData()
 
         XCTAssertTrue(manager.contacts.isEmpty)
-        XCTAssertFalse(manager.contactMessage.isEmpty, "message resets to the default prompt, not blank")
+        XCTAssertEqual(manager.contactMessage, CheckInManager.defaultContactMessage)
         XCTAssertFalse(manager.dailyReminderEnabled)
         XCTAssertFalse(manager.isActive)
     }

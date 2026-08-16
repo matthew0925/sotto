@@ -9,6 +9,11 @@ final class JournalLock: ObservableObject {
     @Published var lastError: String?
 
     func authenticate() {
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+            isUnlocked = true
+            lastError = nil
+            return
+        }
         let context = LAContext()
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {

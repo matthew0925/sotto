@@ -72,10 +72,11 @@ final class SottoUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["権限と端末設定"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["iPhoneの設定を開く"].exists)
         app.swipeUp()
-        XCTAssertTrue(app.staticTexts["PDF書き出しの使い方"].exists)
         XCTAssertTrue(app.staticTexts["そっとについて"].exists)
 
-        app.staticTexts["PDF書き出しの使い方"].tap()
+        app.tabBars.buttons["記録"].tap()
+        XCTAssertTrue(app.buttons["journal.pdfGuide"].waitForExistence(timeout: 3))
+        app.buttons["journal.pdfGuide"].tap()
         XCTAssertTrue(app.navigationBars["PDF書き出し"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["書き出したPDFは暗号化されません。共有先や保存場所を確認し、不要になったら削除してください。"].exists)
     }
