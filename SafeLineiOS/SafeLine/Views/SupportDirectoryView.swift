@@ -6,12 +6,13 @@ import WebKit
 /// addresses, and website links current between App Store releases.
 struct SupportDirectoryView: View {
     let url: URL
+    let title: String
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             SupportDirectoryWebView(url: url)
-                .navigationTitle("全国の支援センター")
+                .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -35,6 +36,7 @@ private struct SupportDirectoryWebView: UIViewRepresentable {
         configuration.dataDetectorTypes = [.link, .phoneNumber]
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.load(URLRequest(url: url))
         return webView
@@ -42,7 +44,7 @@ private struct SupportDirectoryWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         func webView(_ webView: WKWebView,
                      decidePolicyFor navigationAction: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -56,6 +58,19 @@ private struct SupportDirectoryWebView: UIViewRepresentable {
             } else {
                 decisionHandler(.allow)
             }
+        }
+
+        // Official sites sometimes use target="_blank". Load those links in
+        // the same sheet instead of dropping the tap or leaving the app.
+        func webView(_ webView: WKWebView,
+                     createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction,
+                     windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if navigationAction.targetFrame == nil,
+               let url = navigationAction.request.url {
+                webView.load(URLRequest(url: url))
+            }
+            return nil
         }
     }
 }

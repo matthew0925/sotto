@@ -31,8 +31,19 @@ final class SottoUITests: XCTestCase {
 
     func testSupportDirectoryHasSingleDirectoryAction() {
         app.tabBars.buttons["相談窓口"].tap()
-        XCTAssertTrue(app.buttons["窓口一覧"].waitForExistence(timeout: 3))
-        XCTAssertEqual(app.buttons.matching(identifier: "窓口一覧").count, 1)
+        XCTAssertTrue(app.buttons["全国の窓口一覧"].waitForExistence(timeout: 3))
+        XCTAssertEqual(app.buttons.matching(identifier: "全国の窓口一覧").count, 1)
+    }
+
+    func testEmergencyContraceptionOpensInsideApp() {
+        app.tabBars.buttons["相談窓口"].tap()
+        let pharmacy = app.buttons["販売薬局を探す"]
+        for _ in 0..<4 where !pharmacy.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(pharmacy.isHittable)
+        pharmacy.tap()
+        XCTAssertTrue(app.navigationBars["緊急避妊について"].waitForExistence(timeout: 3))
     }
 
     func testEmergencyCallRemainsReachableAtAccessibilityTextSize() {

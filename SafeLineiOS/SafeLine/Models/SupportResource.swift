@@ -13,7 +13,8 @@ struct SupportResource: Codable, Identifiable {
 struct SupportAction: Codable, Identifiable {
     var id: String { "\(type):\(value):\(label)" }
     let label: String
-    /// "tel", "url", or "directory" (the in-app government directory).
+    /// "tel", "url", or "directory". Web actions open in the shared
+    /// in-app browser; telephone actions hand off to the Phone app.
     let type: String
     let value: String
 

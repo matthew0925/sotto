@@ -18,7 +18,7 @@ final class SupportResourceTests: XCTestCase {
         }
 
         XCTAssertEqual(resource?.actions.count, 1)
-        XCTAssertEqual(resource?.actions.first?.label, "窓口一覧")
+        XCTAssertEqual(resource?.actions.first?.label, "全国の窓口一覧")
         XCTAssertEqual(resource?.actions.first?.type, "directory")
         XCTAssertEqual(resource?.actions.first?.value,
                        "https://www.gender.go.jp/policy/no_violence/seibouryoku/consult.html")

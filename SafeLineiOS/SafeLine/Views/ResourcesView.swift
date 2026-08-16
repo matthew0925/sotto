@@ -2,7 +2,13 @@ import SwiftUI
 
 struct ResourcesView: View {
     @State private var resources: [SupportResource] = SupportResourceLoader.load()
-    @State private var directoryURL: URL?
+    @State private var browserDestination: BrowserDestination?
+
+    private struct BrowserDestination: Identifiable {
+        let id = UUID()
+        let title: String
+        let url: URL
+    }
 
     var body: some View {
         ZStack {
@@ -27,13 +33,8 @@ struct ResourcesView: View {
                 .padding(20)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { directoryURL != nil },
-            set: { if !$0 { directoryURL = nil } }
-        )) {
-            if let directoryURL {
-                SupportDirectoryView(url: directoryURL)
-            }
+        .sheet(item: $browserDestination) { destination in
+            SupportDirectoryView(url: destination.url, title: destination.title)
         }
     }
 
@@ -88,7 +89,7 @@ struct ResourcesView: View {
         FlowLayout(spacing: 8) {
             ForEach(resource.actions) { action in
                 Button {
-                    perform(action)
+                    perform(action, resourceTitle: resource.title)
                 } label: {
                     Label(action.label, systemImage: iconName(for: action.type))
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -99,14 +100,15 @@ struct ResourcesView: View {
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint(action.type == "tel" ? "電話アプリを開きます" : "リンクを開きます")
+                .accessibilityHint(action.type == "tel" ? "電話アプリを開きます" : "アプリ内でリンクを開きます")
             }
         }
     }
 
-    private func perform(_ action: SupportAction) {
-        if action.type == "directory", let url = URL(string: action.value) {
-            directoryURL = url
+    private func perform(_ action: SupportAction, resourceTitle: String) {
+        if (action.type == "directory" || action.type == "url"),
+           let url = URL(string: action.value) {
+            browserDestination = BrowserDestination(title: resourceTitle, url: url)
         } else if let url = action.actionURL {
             UIApplication.shared.open(url)
         }

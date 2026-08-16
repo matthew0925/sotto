@@ -20,6 +20,14 @@ targets:
       path: Generated-Info.plist
       properties:
         CFBundleDisplayName: そっと
+        # App Shortcut glyphs are SF Symbols by API design, but their platter
+        # colors can match Sotto's mint visual language.
+        CFBundleIcons:
+          CFBundlePrimaryIcon:
+            NSAppIconActionTintColorName: Teal
+            NSAppIconComplementingColorNames:
+              - Ink
+              - CardFill
         # Required for CheckInManager's check-in location tracking.
         NSLocationWhenInUseUsageDescription: 見守りチェックイン中に、現在地を信頼できる連絡先へ共有するために使用します。
         # Required for JournalLock's Face ID gate on the journal screen.

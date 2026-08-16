@@ -12,7 +12,7 @@
     "desc": "全国のワンストップ支援センターと、各窓口の受付時間・電話・メール・ホームページを確認できます。",
     "type": "contact",
     "actions": [
-      { "label": "窓口一覧", "type": "directory", "value": "https://www.gender.go.jp/policy/no_violence/seibouryoku/consult.html" }
+      { "label": "全国の窓口一覧", "type": "directory", "value": "https://www.gender.go.jp/policy/no_violence/seibouryoku/consult.html" }
     ]
   },
   {
