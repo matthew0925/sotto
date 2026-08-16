@@ -11,6 +11,9 @@ struct JournalView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
     @State private var shareItem: ShareItem?
+    @State private var showingExportOptions = false
+    @State private var exportErrorMessage: String?
+    @State private var temporaryExportURL: URL?
     /// Bound to the memo TextEditor. Tapping another tab does NOT
     /// automatically resign a TextEditor's first-responder status in
     /// SwiftUI, which previously left the keyboard covering the screen with
@@ -28,7 +31,7 @@ struct JournalView: View {
         }
         .overlay(alignment: .topTrailing) {
             if lock.isUnlocked {
-                quickExitButton
+                journalActions
             }
         }
         .onAppear { lock.authenticate() }
@@ -38,33 +41,88 @@ struct JournalView: View {
         .onChange(of: router.selectedTab) { _ in
             isTextEditorFocused = false
         }
-        .sheet(item: $shareItem) { item in
-            ActivityView(activityItems: [item.data])
+        .sheet(item: $shareItem, onDismiss: removeTemporaryExport) { item in
+            ActivityView(activityItems: [item.url])
+        }
+        .confirmationDialog("PDFに写真を含めますか？", isPresented: $showingExportOptions, titleVisibility: .visible) {
+            Button("写真を含める") { exportPDF(includePhotos: true) }
+            Button("文章のみ") { exportPDF(includePhotos: false) }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("写真を含むPDFは暗号化されません。共有先と保存場所を確認してください。")
+        }
+        .alert("PDFを書き出せませんでした", isPresented: Binding(
+            get: { exportErrorMessage != nil },
+            set: { if !$0 { exportErrorMessage = nil } }
+        )) {
+            Button("閉じる", role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "もう一度お試しください。")
         }
     }
 
-    /// Experimental: a persistent, always-reachable escape hatch from the
-    /// most sensitive screen in the app. Pinned above the scroll content
-    /// (not inside it) so it's tappable without scrolling back up first.
+    /// Persistent actions for the most sensitive screen in the app. Keeping
+    /// PDF sharing and quick exit in one fixed group prevents two independent
+    /// top-trailing overlays from colliding on compact devices.
     /// Locks the journal again immediately — not just switching tabs — so
     /// if someone else picks the phone back up right after, they land on
     /// the Face ID prompt, not the last-viewed entry.
-    private var quickExitButton: some View {
-        Button {
-            isTextEditorFocused = false
-            lock.lock()
-            router.selectedTab = .home
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.safeTextDim)
-                .frame(width: 30, height: 30)
-                .background(Color.safeCardFillStrong)
-                .clipShape(Circle())
+    private var journalActions: some View {
+        HStack(spacing: 10) {
+            if !store.entries.isEmpty {
+                Button {
+                    showingExportOptions = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.safeTeal)
+                        .frame(width: 34, height: 34)
+                        .background(Color.safeCardFillStrong)
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("記録をPDFで共有する")
+                .accessibilityIdentifier("journal.pdfShare")
+            }
+
+            Button {
+                isTextEditorFocused = false
+                lock.lock()
+                router.selectedTab = .home
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.safeTextDim)
+                    .frame(width: 34, height: 34)
+                    .background(Color.safeCardFillStrong)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("今すぐ離脱する")
+            .accessibilityIdentifier("journal.quickExit")
         }
-        .accessibilityLabel("今すぐ離脱する")
         .padding(.top, 8)
         .padding(.trailing, 16)
+    }
+
+    private func exportPDF(includePhotos: Bool) {
+        removeTemporaryExport()
+        do {
+            let url = try JournalExporter.makePDFFile(
+                entries: store.entries,
+                includePhotos: includePhotos,
+                photoProvider: includePhotos ? { store.photo(for: $0) } : nil
+            )
+            temporaryExportURL = url
+            shareItem = ShareItem(url: url)
+        } catch {
+            exportErrorMessage = "一時ファイルを作成できませんでした。端末の空き容量を確認して、もう一度お試しください。"
+        }
+    }
+
+    private func removeTemporaryExport() {
+        if let temporaryExportURL {
+            try? FileManager.default.removeItem(at: temporaryExportURL)
+            self.temporaryExportURL = nil
+        }
     }
 
     private var lockScreen: some View {
@@ -104,17 +162,8 @@ struct JournalView: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
                     Spacer()
-                    if !store.entries.isEmpty {
-                        Button {
-                            let pdf = JournalExporter.makePDF(entries: store.entries)
-                            shareItem = ShareItem(data: pdf)
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 18))
-                                .foregroundColor(.safeTeal)
-                        }
-                    }
                 }
+                .padding(.trailing, store.entries.isEmpty ? 42 : 86)
                 Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末の中だけに残ります。誰にも見せなくて大丈夫です。あなたのための記録です。")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.safeTextDim)
@@ -321,7 +370,7 @@ private struct JournalEntryRow: View {
 
 private struct ShareItem: Identifiable {
     let id = UUID()
-    let data: Data
+    let url: URL
 }
 
 private struct ActivityView: UIViewControllerRepresentable {

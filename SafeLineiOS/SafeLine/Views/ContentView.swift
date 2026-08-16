@@ -32,6 +32,12 @@ struct ContentView: View {
             let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
             showOnboarding = !isUITesting && !onboardingCompleted
         }
+        .onChange(of: onboardingCompleted) { completed in
+            let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+            if !isUITesting && !completed {
+                showOnboarding = true
+            }
+        }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 onboardingCompleted = true

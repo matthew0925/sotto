@@ -1,4 +1,6 @@
 import SwiftUI
+import CoreLocation
+import UserNotifications
 
 /// Restructured as a native Form/Section list (previously a stack of custom
 /// cards) as part of a deliberate declutter pass: Settings is a "calm mode"
@@ -13,9 +15,13 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var checkInManager: CheckInManager
     @EnvironmentObject var journalStore: JournalStore
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
+    @AppStorage("sotto.onboarding.completed") private var onboardingCompleted = false
     @StateObject private var iconManager = IconManager()
     @State private var showingEraseConfirm = false
     @State private var didErase = false
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     private let intervalOptions: [(label: String, seconds: TimeInterval)] = [
         ("30秒", 30), ("1分", 60), ("2分", 120), ("5分", 300), ("10分", 600)
@@ -45,6 +51,33 @@ struct SettingsView: View {
                                 .foregroundColor(.safeTextFaint)
                         }
                     }
+                }
+                .listRowBackground(Color.safeCardFill)
+
+                Section {
+                    permissionRow(
+                        title: "通知",
+                        status: notificationStatusText,
+                        systemImage: "bell.badge"
+                    )
+                    permissionRow(
+                        title: "位置情報",
+                        status: locationStatusText,
+                        systemImage: "location"
+                    )
+
+                    Button {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        openURL(url)
+                    } label: {
+                        Label("iPhoneの設定を開く", systemImage: "gear")
+                            .font(.system(size: 15, design: .rounded))
+                    }
+                } header: {
+                    Text("権限と端末設定")
+                } footer: {
+                    Text("権限は必要な機能を使うときに確認します。拒否した権限は、iPhoneの設定から変更できます。")
+                        .font(.system(size: 12.5, design: .rounded))
                 }
                 .listRowBackground(Color.safeCardFill)
 
@@ -91,6 +124,36 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.safeCardFill)
 
+                Section("記録") {
+                    NavigationLink {
+                        PDFExportGuideView()
+                    } label: {
+                        Label("PDF書き出しの使い方", systemImage: "doc.richtext")
+                            .font(.system(size: 15, design: .rounded))
+                            .foregroundColor(.safeText)
+                    }
+                }
+                .listRowBackground(Color.safeCardFill)
+
+                Section("このアプリについて") {
+                    NavigationLink {
+                        AboutSottoView(onReplayOnboarding: {
+                            onboardingCompleted = false
+                        })
+                    } label: {
+                        HStack {
+                            Label("そっとについて", systemImage: "info.circle")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundColor(.safeText)
+                            Spacer()
+                            Text(appVersionText)
+                                .font(.system(size: 13.5, design: .rounded))
+                                .foregroundColor(.safeTextFaint)
+                        }
+                    }
+                }
+                .listRowBackground(Color.safeCardFill)
+
                 Section {
                     Button(role: .destructive) {
                         showingEraseConfirm = true
@@ -116,6 +179,10 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Color.safeInk)
             .navigationTitle("設定")
+            .task { refreshPermissionStatus() }
+            .onChange(of: scenePhase) { phase in
+                if phase == .active { refreshPermissionStatus() }
+            }
         }
         .tint(.safeTeal)
         .confirmationDialog("この端末のデータをすべて消しますか？",
@@ -130,6 +197,146 @@ struct SettingsView: View {
         } message: {
             Text("この操作は取り消せません。")
         }
+    }
+
+    private func permissionRow(title: String, status: String, systemImage: String) -> some View {
+        HStack {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 15, design: .rounded))
+                .foregroundColor(.safeText)
+            Spacer()
+            Text(status)
+                .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                .foregroundColor(.safeTextDim)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var notificationStatusText: String {
+        switch notificationStatus {
+        case .authorized, .provisional, .ephemeral: return "許可済み"
+        case .denied: return "許可されていません"
+        case .notDetermined: return "未確認"
+        @unknown default: return "確認できません"
+        }
+    }
+
+    private var locationStatusText: String {
+        switch checkInManager.locationManager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse: return "許可済み"
+        case .denied, .restricted: return "許可されていません"
+        case .notDetermined: return "未確認"
+        @unknown default: return "確認できません"
+        }
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        return "バージョン \(version)"
+    }
+
+    private func refreshPermissionStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                notificationStatus = settings.authorizationStatus
+            }
+        }
+    }
+}
+
+struct PDFExportGuideView: View {
+    var body: some View {
+        List {
+            Section {
+                guideStep(number: 1, text: "「記録」タブを開き、Face IDまたはパスコードでロックを解除します。")
+                guideStep(number: 2, text: "記録が1件以上あると、画面右上に共有ボタンが表示されます。")
+                guideStep(number: 3, text: "共有ボタンを押し、保存先や共有先を選びます。")
+            } header: {
+                Text("書き出し方法")
+            }
+
+            Section {
+                Label("共有時に、添付写真を含めるか文章だけにするか選べます。", systemImage: "photo")
+                Label("書き出したPDFは暗号化されません。共有先や保存場所を確認し、不要になったら削除してください。", systemImage: "lock.open.trianglebadge.exclamationmark")
+            } header: {
+                Text("大切な注意")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.safeInk)
+        .navigationTitle("PDF書き出し")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func guideStep(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundColor(.safeOnAccent)
+                .frame(width: 26, height: 26)
+                .background(Color.safeTeal)
+                .clipShape(Circle())
+            Text(text)
+                .font(.system(size: 14.5, design: .rounded))
+                .foregroundColor(.safeText)
+        }
+        .padding(.vertical, 3)
+    }
+}
+
+struct AboutSottoView: View {
+    let onReplayOnboarding: () -> Void
+
+    private let privacyPolicyURL = URL(string: "https://matthew0925.github.io/sotto/privacy/")!
+
+    private var versionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return "バージョン \(version)（\(build)）"
+    }
+
+    var body: some View {
+        List {
+            Section {
+                Text("そっとは、見守り、相談窓口への連絡、出来事の記録を、自分のペースで使うためのアプリです。")
+                    .font(.system(size: 14.5, design: .rounded))
+                    .foregroundColor(.safeText)
+
+                Button {
+                    onReplayOnboarding()
+                } label: {
+                    Label("使い方をもう一度見る", systemImage: "rectangle.on.rectangle")
+                        .font(.system(size: 15, design: .rounded))
+                }
+            }
+
+            Section {
+                Link(destination: privacyPolicyURL) {
+                    Label("プライバシーポリシー", systemImage: "hand.raised")
+                        .font(.system(size: 15, design: .rounded))
+                }
+            }
+
+            Section {
+                Text("アカウント登録や専用サーバーへの送信は行いません。記録本文と添付写真は暗号化し、見守りの連絡先とともにこの端末内へ保存します。位置情報は見守り中の連絡文を作るために使い、アプリのサーバーへ保存・送信しません。")
+                Text("設定値もこの端末内に保存されます。「この端末のデータをすべて消す」を実行すると、記録と見守りの連絡先を削除できます。")
+                Text("記録をPDFへ書き出す際は、添付写真を含めるか文章だけにするか選べます。写真を含む場合も含めない場合も、書き出したPDFは暗号化されません。")
+                Text("PDFとして書き出した記録や、メッセージ・メールなどで共有した内容はアプリの保護対象外です。共有先と保存場所を必ず確認してください。")
+                    .foregroundColor(.safeCoral)
+            } header: {
+                Text("データの保存について")
+            }
+
+            Section {
+                Text(versionText)
+                    .foregroundColor(.safeTextDim)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.safeInk)
+        .navigationTitle("そっとについて")
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(.safeTeal)
     }
 }
 

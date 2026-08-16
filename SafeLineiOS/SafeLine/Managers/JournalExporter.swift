@@ -1,12 +1,15 @@
 import UIKit
 
-/// Renders journal entries into a plain PDF the user can share (e.g. to show
-/// a support organization or keep outside the app). Deliberately text-only
-/// for now — bundling decrypted photos into a PDF that then gets AirDropped
-/// or emailed defeats a lot of the point of encrypting them on-device in the
-/// first place, so that's left as a conscious gap rather than done casually.
+/// Renders journal entries into a PDF the user can share. Photos are opt-in at
+/// export time because the resulting PDF is no longer protected by the app's
+/// on-device encryption.
 enum JournalExporter {
-    static func makePDF(entries: [JournalEntry]) -> Data {
+    static func makePDF(
+        entries: [JournalEntry],
+        includePhotos: Bool = false,
+        photoProvider: ((JournalEntry) -> Data?)? = nil,
+        generatedAt: Date = Date()
+    ) -> Data {
         let pageWidth: CGFloat = 612 // US Letter @ 72dpi
         let pageHeight: CGFloat = 792
         let margin: CGFloat = 48
@@ -26,11 +29,12 @@ enum JournalExporter {
             title.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: titleFont])
             y += 28
 
-            let generated = "書き出し日時: \(DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short))"
+            let generated = "書き出し日時: \(DateFormatter.localizedString(from: generatedAt, dateStyle: .medium, timeStyle: .short))"
             generated.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: noteFont, .foregroundColor: UIColor.darkGray])
             y += 16
 
-            let note = "この端末に保存された記録のみを含みます。写真は含まれません。各記録のハッシュ値は、\nその文章から独自に再計算すれば一致するはずです（作成後に書き換えられていないことの目安です。\n法的な証明として保証するものではありません）。"
+            let photoNote = includePhotos ? "添付写真を含みます。" : "写真は含まれません。"
+            let note = "この端末に保存された記録のみを含みます。\(photoNote)各記録のハッシュ値は、\nその文章と添付写真から再計算できます（作成後に書き換えられていないことの目安です。\n法的な証明として保証するものではありません）。"
             note.draw(
                 with: CGRect(x: margin, y: y, width: pageWidth - margin * 2, height: 40),
                 options: [.usesLineFragmentOrigin, .usesFontLeading],
@@ -73,8 +77,72 @@ enum JournalExporter {
                 let createdString = DateFormatter.localizedString(from: entry.createdAt, dateStyle: .short, timeStyle: .medium)
                 let hashLine = "作成: \(createdString)   SHA-256: \(entry.contentHash)"
                 hashLine.draw(at: CGPoint(x: margin, y: y), withAttributes: [.font: hashFont, .foregroundColor: UIColor.gray])
-                y += 14 + 18
+                y += 18
+
+                if includePhotos, entry.hasPhoto {
+                    if let data = photoProvider?(entry), let image = UIImage(data: data) {
+                        let maxPhotoWidth = pageWidth - margin * 2
+                        let maxPhotoHeight: CGFloat = 300
+                        let scale = min(maxPhotoWidth / image.size.width, maxPhotoHeight / image.size.height, 1)
+                        let photoSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+
+                        if y + photoSize.height + 24 > pageHeight - margin {
+                            context.beginPage()
+                            y = margin
+                        }
+
+                        image.draw(in: CGRect(x: margin, y: y, width: photoSize.width, height: photoSize.height))
+                        y += photoSize.height + 24
+                    } else {
+                        "添付写真を読み込めませんでした。".draw(
+                            at: CGPoint(x: margin, y: y),
+                            withAttributes: [.font: noteFont, .foregroundColor: UIColor.gray]
+                        )
+                        y += 30
+                    }
+                } else {
+                    y += 14
+                }
             }
+        }
+    }
+
+    /// Creates a protected temporary file so the share sheet receives a URL
+    /// (and therefore a meaningful filename) instead of anonymous PDF data.
+    static func makePDFFile(
+        entries: [JournalEntry],
+        includePhotos: Bool,
+        photoProvider: ((JournalEntry) -> Data?)? = nil,
+        generatedAt: Date = Date()
+    ) throws -> URL {
+        let data = makePDF(
+            entries: entries,
+            includePhotos: includePhotos,
+            photoProvider: photoProvider,
+            generatedAt: generatedAt
+        )
+        let url = uniqueTemporaryURL(generatedAt: generatedAt)
+        try data.write(to: url, options: [.atomic, .completeFileProtection])
+        return url
+    }
+
+    static func exportFilename(generatedAt: Date, sequence: Int? = nil) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd_HHmmss"
+        let suffix = sequence.map { "_\($0)" } ?? ""
+        return "そっと_記録_\(formatter.string(from: generatedAt))\(suffix).pdf"
+    }
+
+    private static func uniqueTemporaryURL(generatedAt: Date) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+        var sequence: Int?
+        while true {
+            let candidate = directory.appendingPathComponent(exportFilename(generatedAt: generatedAt, sequence: sequence))
+            if !FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+            sequence = (sequence ?? 1) + 1
         }
     }
 }

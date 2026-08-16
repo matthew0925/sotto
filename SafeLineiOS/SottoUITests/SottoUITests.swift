@@ -65,4 +65,27 @@ final class SottoUITests: XCTestCase {
         XCTAssertLessThanOrEqual((secondRowTops.max() ?? 0) - (secondRowTops.min() ?? 0), 1)
         XCTAssertGreaterThan(secondRowTops.min() ?? 0, firstRowTops.max() ?? 0)
     }
+
+    func testSettingsHelpAndPermissionSectionsAreAvailable() {
+        app.tabBars.buttons["設定"].tap()
+
+        XCTAssertTrue(app.staticTexts["権限と端末設定"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["iPhoneの設定を開く"].exists)
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts["PDF書き出しの使い方"].exists)
+        XCTAssertTrue(app.staticTexts["そっとについて"].exists)
+
+        app.staticTexts["PDF書き出しの使い方"].tap()
+        XCTAssertTrue(app.navigationBars["PDF書き出し"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["書き出したPDFは暗号化されません。共有先や保存場所を確認し、不要になったら削除してください。"].exists)
+    }
+
+    func testAboutScreenContainsPrivacyPolicyLink() {
+        app.tabBars.buttons["設定"].tap()
+        app.swipeUp()
+        app.staticTexts["そっとについて"].tap()
+
+        XCTAssertTrue(app.navigationBars["そっとについて"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["プライバシーポリシー"].exists)
+    }
 }
