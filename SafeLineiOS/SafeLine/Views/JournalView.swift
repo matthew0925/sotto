@@ -163,7 +163,6 @@ struct JournalView: View {
                     .cornerRadius(12)
             }
 
-            pdfExportGuideButton
         }
     }
 
