@@ -367,12 +367,12 @@ struct ShortcutGuideView: View {
             } header: {
                 Text("用意されているショートカット")
             } footer: {
-                Text("画面を開くだけで、発信、SMS送信、見守り開始は自動で行いません。")
+                Text("画面を開くだけで、発信、SMS送信、\n見守り開始は自動で行いません。")
             }
 
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("下のボタンから「そっと」のショートカット一覧を開けます。")
+                    Text("下のボタンから「そっと」の\nショートカット一覧を開けます。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
                     ShortcutsLink()
@@ -382,7 +382,7 @@ struct ShortcutGuideView: View {
             } header: {
                 Text("ショートカットアプリ")
             } footer: {
-                Text("「そっと」のショートカットを確認したり、ホーム画面などへ追加したりできます。")
+                Text("「そっと」のショートカットを確認したり、\nホーム画面などへ追加したりできます。")
             }
 
             Section {
