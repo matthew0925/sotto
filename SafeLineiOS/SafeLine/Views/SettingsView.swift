@@ -378,7 +378,7 @@ struct ShortcutGuideView: View {
 
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("下のボタンから「そっと」の\nショートカット一覧を開けます。")
+                    Text("「そっと」のショートカットを開けます。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
                     ShortcutsLink()

@@ -92,6 +92,6 @@ final class SottoUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["ショートカットとアクションボタン"].exists)
         app.staticTexts["ショートカットとアクションボタン"].tap()
         XCTAssertTrue(app.navigationBars["ショートカット"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["下のボタンから「そっと」の\nショートカット一覧を開けます。"].exists)
+        XCTAssertTrue(app.staticTexts["「そっと」のショートカットを開けます。"].exists)
     }
 }
