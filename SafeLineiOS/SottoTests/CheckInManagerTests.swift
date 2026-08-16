@@ -176,6 +176,78 @@ final class CheckInManagerTests: XCTestCase {
         XCTAssertEqual(CheckInManager.automationSnapshot().recipients,
                        ["09011112222", "+819033334444"])
     }
+
+    func testAutomationDeliveryCanBeClaimedOnlyOncePerSession() throws {
+        let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults.standard.set("session-a", forKey: "sotto.checkin.sessionID")
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+
+        let first = CheckInManager.automationSnapshot(claimForDelivery: true)
+        let second = CheckInManager.automationSnapshot(claimForDelivery: true)
+
+        XCTAssertTrue(first.shouldSend)
+        XCTAssertEqual(first.deliveryStatus, "送信可能")
+        XCTAssertEqual(first.recipients, ["09011112222"])
+        XCTAssertFalse(second.shouldSend)
+        XCTAssertFalse(second.isOverdue)
+        XCTAssertEqual(second.deliveryStatus, "受け渡し済み")
+        XCTAssertTrue(second.recipients.isEmpty)
+        XCTAssertTrue(second.message.isEmpty)
+    }
+
+    func testNewAutomationSessionCanDeliverAfterPreviousSessionWasClaimed() throws {
+        let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults.standard.set("session-b", forKey: "sotto.checkin.sessionID")
+        UserDefaults.standard.set("session-a", forKey: "sotto.checkin.automationClaimedSessionID")
+
+        let snapshot = CheckInManager.automationSnapshot(claimForDelivery: true)
+
+        XCTAssertTrue(snapshot.shouldSend)
+        XCTAssertEqual(snapshot.sessionID, "session-b")
+    }
+
+    func testAutomationReportsConfigurationErrorWithoutClaiming() throws {
+        let contacts = [EmergencyContact(name: "不正", phoneNumber: "番号なし")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults.standard.set("session-invalid", forKey: "sotto.checkin.sessionID")
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+
+        let snapshot = CheckInManager.automationSnapshot(claimForDelivery: true)
+
+        XCTAssertFalse(snapshot.shouldSend)
+        XCTAssertEqual(snapshot.deliveryStatus, "設定不備")
+        XCTAssertNil(UserDefaults.standard.string(forKey: "sotto.checkin.automationClaimedSessionID"))
+    }
+
+    func testConcurrentAutomationRunsExposePayloadExactlyOnce() throws {
+        let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults.standard.set("session-concurrent", forKey: "sotto.checkin.sessionID")
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+
+        let resultLock = NSLock()
+        var results: [CheckInManager.AutomationSnapshot] = []
+        DispatchQueue.concurrentPerform(iterations: 12) { _ in
+            let snapshot = CheckInManager.automationSnapshot(claimForDelivery: true)
+            resultLock.lock()
+            results.append(snapshot)
+            resultLock.unlock()
+        }
+
+        XCTAssertEqual(results.filter(\.shouldSend).count, 1)
+        XCTAssertEqual(results.filter { !$0.recipients.isEmpty }.count, 1)
+        XCTAssertEqual(results.filter { !$0.message.isEmpty }.count, 1)
+    }
 }
 
 final class NotificationRoutingTests: XCTestCase {

@@ -19,7 +19,11 @@ import Security
 final class CheckInManager: ObservableObject {
     struct AutomationSnapshot {
         let isActive: Bool
+        let deadlinePassed: Bool
         let isOverdue: Bool
+        let shouldSend: Bool
+        let deliveryStatus: String
+        let sessionID: String?
         let deadline: Date?
         let recipients: [String]
         let message: String
@@ -44,17 +48,27 @@ final class CheckInManager: ObservableObject {
     private static let dailyReminderNotificationId = "safeline.checkin.dailyReminder"
     private static let activeKey = "sotto.checkin.active"
     private static let endDateKey = "sotto.checkin.endDate"
+    private static let sessionIDKey = "sotto.checkin.sessionID"
+    private static let claimedSessionIDKey = "sotto.checkin.automationClaimedSessionID"
+    private static let automationLock = NSLock()
 
     /// Read-only bridge used by App Intents. Shortcuts can ask Sotto for the
     /// latest deadline and message at run time, so ending a check-in prevents
     /// a previously configured automation from sending stale information.
-    static func automationSnapshot(now: Date = Date()) -> AutomationSnapshot {
+    static func automationSnapshot(now: Date = Date(), claimForDelivery: Bool = false) -> AutomationSnapshot {
+        if claimForDelivery { automationLock.lock() }
+        defer { if claimForDelivery { automationLock.unlock() } }
+
         let storedActive = UserDefaults.standard.bool(forKey: activeKey)
         let deadline = UserDefaults.standard.object(forKey: endDateKey) as? Date
         // A partially written/corrupt state with no deadline can never become
         // overdue. Treat it as inactive so contacts are not exposed through
         // Shortcuts indefinitely.
         let isActive = storedActive && deadline != nil
+        let sessionID = isActive
+            ? (UserDefaults.standard.string(forKey: sessionIDKey)
+                ?? deadline.map { "legacy-\($0.timeIntervalSince1970)" })
+            : nil
         let contacts: [EmergencyContact]
         if let data = KeychainStore.get(contactsKey),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
@@ -70,14 +84,44 @@ final class CheckInManager: ObservableObject {
             message += "\n（見守りの目安時刻: \(automationTimeFormatter.string(from: deadline))）"
         }
 
+        let deadlinePassed = isActive && deadline.map { $0 <= now } == true
+        let recipients = contacts.compactMap(\.dialablePhoneNumber)
+        let claimedSessionID = UserDefaults.standard.string(forKey: claimedSessionIDKey)
+        let alreadyClaimed = sessionID != nil && claimedSessionID == sessionID
+        let shouldSend = deadlinePassed && !recipients.isEmpty && !alreadyClaimed
+
+        let deliveryStatus: String
+        if !isActive {
+            deliveryStatus = "見守り終了"
+        } else if !deadlinePassed {
+            deliveryStatus = "待機中"
+        } else if recipients.isEmpty {
+            deliveryStatus = "設定不備"
+        } else if alreadyClaimed {
+            deliveryStatus = "受け渡し済み"
+        } else {
+            deliveryStatus = "送信可能"
+        }
+
+        // Claim before returning the payload. Two overlapping automation runs
+        // can no longer both receive recipients for the same check-in session.
+        if claimForDelivery, shouldSend, let sessionID {
+            UserDefaults.standard.set(sessionID, forKey: claimedSessionIDKey)
+        }
+
         return AutomationSnapshot(
             isActive: isActive,
-            isOverdue: isActive && deadline.map { $0 <= now } == true,
+            deadlinePassed: deadlinePassed,
+            // Kept for existing shortcuts: after a session has been handed off,
+            // this becomes false so an old「期限超過なら送信」automation cannot
+            // send the same alert repeatedly.
+            isOverdue: shouldSend,
+            shouldSend: shouldSend,
+            deliveryStatus: deliveryStatus,
+            sessionID: sessionID,
             deadline: isActive ? deadline : nil,
-            recipients: isActive && deadline.map { $0 <= now } == true
-                ? contacts.compactMap(\.dialablePhoneNumber)
-                : [],
-            message: isActive && deadline.map { $0 <= now } == true ? message : ""
+            recipients: shouldSend ? recipients : [],
+            message: shouldSend ? message : ""
         )
     }
 
@@ -286,6 +330,8 @@ final class CheckInManager: ObservableObject {
         locationManager.stopTracking()
         UserDefaults.standard.removeObject(forKey: Self.activeKey)
         UserDefaults.standard.removeObject(forKey: Self.endDateKey)
+        UserDefaults.standard.removeObject(forKey: Self.sessionIDKey)
+        UserDefaults.standard.removeObject(forKey: Self.claimedSessionIDKey)
     }
 
     /// Called from the notification action, or from a manual "今すぐ連絡先に知らせる"
@@ -371,6 +417,8 @@ final class CheckInManager: ObservableObject {
                 self.didRequestComposerForCurrentTimeout = false
                 UserDefaults.standard.set(true, forKey: Self.activeKey)
                 UserDefaults.standard.set(date, forKey: Self.endDateKey)
+                UserDefaults.standard.set(UUID().uuidString, forKey: Self.sessionIDKey)
+                UserDefaults.standard.removeObject(forKey: Self.claimedSessionIDKey)
                 self.startTicker()
                 self.locationManager.requestPermission()
                 self.locationManager.startTracking()

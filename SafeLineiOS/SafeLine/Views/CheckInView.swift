@@ -426,7 +426,7 @@ private struct AutomaticSMSGuideView: View {
                 Section("設定手順") {
                     automationStep(1, "下のボタンから「そっと」のショートカットを開きます。")
                     automationStep(2, "オートメーションで定期的な時刻または専用アラームをトリガーにします。見守り終了後にも一度は動く時刻にしてください。")
-                    automationStep(3, "「見守り情報を取得」を追加し、「期限超過」が真の場合だけ「メッセージを送信」を実行します。")
+                    automationStep(3, "「見守り情報を取得」を追加し、「送信が必要」が真の場合だけ「メッセージを送信」を実行します。")
                     automationStep(4, "送信先に「送信先」、本文に「メッセージ」を指定し、「すぐに実行」を選びます。")
                 }
 
@@ -434,7 +434,7 @@ private struct AutomaticSMSGuideView: View {
                     ShortcutsLink()
                         .shortcutsLinkStyle(.light)
                 } footer: {
-                    Text("見守りを終了すると「期限超過」は偽になるため、SMS送信条件を満たしません。ショートカットへ渡した連絡先と本文は、そっとの保護対象外です。")
+                    Text("同じ見守りの送信先と本文は1回だけ渡します。見守りを終了すると「送信が必要」は偽になります。ショートカットへ渡した連絡先と本文は、そっとの保護対象外です。")
                 }
             }
             .scrollContentBackground(.hidden)

@@ -13,6 +13,8 @@ struct OpenSottoIntent: AppIntent {
         "そっとのホーム画面を開きます。発信やメッセージ送信は行いません。"
     )
     static var openAppWhenRun: Bool = true
+    @available(iOS 26.0, *)
+    static var supportedModes: IntentModes { .foreground(.immediate) }
 
     func perform() async throws -> some IntentResult {
         .result()
@@ -25,6 +27,8 @@ struct OpenSOSIntent: AppIntent {
         "110番へ電話できるホーム画面を開きます。自動で発信することはありません。"
     )
     static var openAppWhenRun: Bool = true
+    @available(iOS 26.0, *)
+    static var supportedModes: IntentModes { .foreground(.immediate) }
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -41,6 +45,8 @@ struct StartCheckInIntent: AppIntent {
         "見守りチェックインの設定画面を開きます。開始するにはアプリ内での操作が必要です。"
     )
     static var openAppWhenRun: Bool = true
+    @available(iOS 26.0, *)
+    static var supportedModes: IntentModes { .foreground(.immediate) }
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -66,6 +72,15 @@ struct CheckInAutomationInfo: AppEntity {
     @Property(title: "期限超過")
     var isOverdue: Bool
 
+    @Property(title: "送信が必要")
+    var shouldSend: Bool
+
+    @Property(title: "状態")
+    var deliveryStatus: String
+
+    @Property(title: "見守りID")
+    var sessionID: String?
+
     @Property(title: "終了時刻")
     var deadline: Date?
 
@@ -83,6 +98,9 @@ struct CheckInAutomationInfo: AppEntity {
         id = "current"
         isActive = snapshot.isActive
         isOverdue = snapshot.isOverdue
+        shouldSend = snapshot.shouldSend
+        deliveryStatus = snapshot.deliveryStatus
+        sessionID = snapshot.sessionID
         deadline = snapshot.deadline
         recipients = snapshot.recipients
         message = snapshot.message
@@ -103,12 +121,14 @@ struct CheckInAutomationInfoQuery: EntityQuery {
 struct GetCheckInAutomationInfoIntent: AppIntent {
     static var title: LocalizedStringResource = "見守り情報を取得"
     static var description = IntentDescription(
-        "現在の見守り状態、終了時刻、期限超過、SMSの送信先と本文を取得します。送信は行いません。"
+        "期限を過ぎた見守りについて、SMSの送信先と本文を1回だけ取得します。送信は行いません。"
     )
     static var openAppWhenRun = false
+    @available(iOS 26.0, *)
+    static var supportedModes: IntentModes { .background }
 
     func perform() async throws -> some IntentResult & ReturnsValue<CheckInAutomationInfo> {
-        .result(value: CheckInAutomationInfo(snapshot: CheckInManager.automationSnapshot()))
+        .result(value: CheckInAutomationInfo(snapshot: CheckInManager.automationSnapshot(claimForDelivery: true)))
     }
 }
 
