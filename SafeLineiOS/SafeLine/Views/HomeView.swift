@@ -173,7 +173,7 @@ struct HomeView: View {
                     .foregroundColor(manager.isActive ? .safeTeal : .safeTextFaint)
                     .cornerRadius(99)
             }
-            Text("時間になっても「無事です」を押さなければ、あなたが選んだ人に現在地とともにそっと知らせが届きます。")
+            Text("時間になると通知します。通知からメッセージ作成画面を開き、内容を確認して送信できます。")
                 .font(.system(size: 14, design: .rounded))
                 .foregroundColor(.safeTextDim)
             Button {

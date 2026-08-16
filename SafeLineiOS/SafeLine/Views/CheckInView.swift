@@ -65,7 +65,7 @@ struct CheckInView: View {
                     .disabled(manager.isActive)
 
                     Button(action: primaryAction) {
-                        Text(manager.isActive ? "無事です（見守りを終える）" : "この内容で見守りをはじめる")
+                        Text(manager.isActive ? "無事です（見守りを終える）" : manager.isStarting ? "通知を確認しています…" : "この内容で見守りをはじめる")
                             .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -73,7 +73,14 @@ struct CheckInView: View {
                             .foregroundColor(manager.contacts.isEmpty && !manager.isActive ? .safeTextFaint : .safeOnAccent)
                             .cornerRadius(12)
                     }
-                    .disabled(manager.contacts.isEmpty && !manager.isActive)
+                    .disabled((manager.contacts.isEmpty && !manager.isActive) || manager.isStarting)
+
+                    if let error = manager.lastStartError {
+                        Text(error)
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundColor(.safeCoral)
+                            .accessibilityLabel("見守りを開始できませんでした。\(error)")
+                    }
 
                     if manager.isActive {
                         Button {
@@ -135,10 +142,17 @@ struct CheckInView: View {
                 selectedMinutes = presets.min(by: { abs($0 - pending) < abs($1 - pending) }) ?? pending
                 manager.pendingStartMinutes = nil
             }
+            presentPendingAlertIfNeeded()
         }
         .onChange(of: router.selectedTab) { _ in
             focusedField = nil
         }
+    }
+
+    private func presentPendingAlertIfNeeded() {
+        guard manager.wantsToSendAlert else { return }
+        showingMessageComposer = true
+        manager.wantsToSendAlert = false
     }
 
     // MARK: - Contacts

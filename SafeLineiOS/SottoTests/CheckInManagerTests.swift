@@ -1,4 +1,5 @@
 import XCTest
+import UserNotifications
 @testable import Sotto
 
 final class CheckInManagerTests: XCTestCase {
@@ -25,6 +26,10 @@ final class CheckInManagerTests: XCTestCase {
     /// the old single-value Keychain entry into the new array format.
     func testLegacySingleContactMigratesIntoContactsArray() {
         CheckInManager().eraseSavedData()
+        // A real pre-migration install has no value under the new array key.
+        // eraseSavedData() intentionally persists an empty new-format array,
+        // so remove it here to reproduce the legacy-only state accurately.
+        KeychainStore.delete("sotto.checkin.contacts")
         KeychainStore.setString("08099998888", for: "sotto.checkin.contact")
 
         let manager = CheckInManager()
@@ -55,5 +60,68 @@ final class CheckInManagerTests: XCTestCase {
         let decoded = try JSONDecoder().decode([EmergencyContact].self, from: data)
         XCTAssertEqual(decoded.map(\.name), original.map(\.name))
         XCTAssertEqual(decoded.map(\.phoneNumber), original.map(\.phoneNumber))
+    }
+
+    func testActiveCheckInRestoresAfterProcessRelaunch() {
+        let endDate = Date().addingTimeInterval(600)
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(endDate, forKey: "sotto.checkin.endDate")
+
+        let restored = CheckInManager()
+
+        XCTAssertTrue(restored.isActive)
+        XCTAssertEqual(restored.endDate?.timeIntervalSince1970 ?? 0,
+                       endDate.timeIntervalSince1970, accuracy: 0.01)
+        XCTAssertGreaterThan(restored.remainingSeconds, 0)
+        restored.markSafe()
+    }
+
+    func testMarkSafeClearsPersistedActiveState() {
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(600), forKey: "sotto.checkin.endDate")
+
+        let manager = CheckInManager()
+        manager.markSafe()
+        let reloaded = CheckInManager()
+
+        XCTAssertFalse(reloaded.isActive)
+        XCTAssertNil(reloaded.endDate)
+    }
+}
+
+final class NotificationRoutingTests: XCTestCase {
+    func testSendActionNavigatesAndRequestsComposer() {
+        let delegate = AppDelegate()
+        let router = AppRouter()
+        delegate.router = router
+
+        delegate.handleNotificationAction(identifier: CheckInManager.sendActionId,
+                                          category: CheckInManager.timeoutCategoryId)
+
+        XCTAssertEqual(router.selectedTab, .checkin)
+        XCTAssertTrue(delegate.checkInManager.wantsToSendAlert)
+    }
+
+    func testColdLaunchDefersNavigationUntilRouterExists() {
+        let delegate = AppDelegate()
+
+        delegate.handleNotificationAction(identifier: CheckInManager.sendActionId,
+                                          category: CheckInManager.timeoutCategoryId)
+        let router = AppRouter()
+        delegate.router = router
+
+        XCTAssertEqual(router.selectedTab, .checkin)
+        XCTAssertTrue(delegate.checkInManager.wantsToSendAlert)
+    }
+
+    func testDefaultTimeoutTapNavigatesToCheckIn() {
+        let delegate = AppDelegate()
+        let router = AppRouter()
+        delegate.router = router
+
+        delegate.handleNotificationAction(identifier: UNNotificationDefaultActionIdentifier,
+                                          category: CheckInManager.timeoutCategoryId)
+
+        XCTAssertEqual(router.selectedTab, .checkin)
     }
 }

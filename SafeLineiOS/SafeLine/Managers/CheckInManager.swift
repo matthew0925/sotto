@@ -30,10 +30,14 @@ final class CheckInManager: ObservableObject {
     private static let dailyReminderMinuteKey = "sotto.checkin.dailyReminder.minute"
     private static let dailyReminderDurationKey = "sotto.checkin.dailyReminder.durationMinutes"
     private static let dailyReminderNotificationId = "safeline.checkin.dailyReminder"
+    private static let activeKey = "sotto.checkin.active"
+    private static let endDateKey = "sotto.checkin.endDate"
 
     @Published var isActive: Bool = false
     @Published var endDate: Date?
     @Published var remainingSeconds: TimeInterval = 0
+    @Published private(set) var isStarting = false
+    @Published private(set) var lastStartError: String?
 
     @Published var contacts: [EmergencyContact] {
         didSet {
@@ -127,6 +131,15 @@ final class CheckInManager: ObservableObject {
         if dailyReminderEnabled {
             scheduleDailyReminder()
         }
+
+        if UserDefaults.standard.bool(forKey: Self.activeKey),
+           let savedEndDate = UserDefaults.standard.object(forKey: Self.endDateKey) as? Date {
+            isActive = true
+            endDate = savedEndDate
+            remainingSeconds = max(0, savedEndDate.timeIntervalSinceNow)
+            startTicker()
+            locationManager.startTracking()
+        }
     }
 
     private func registerNotificationCategories() {
@@ -146,20 +159,14 @@ final class CheckInManager: ObservableObject {
     }
 
     func start(minutes: Int, contacts: [EmergencyContact], message: String) {
+        guard !isStarting, !isActive else { return }
         self.contacts = contacts
         contactMessage = message
         pendingStartMinutes = nil
-
-        requestNotificationPermissionIfNeeded()
-
+        lastStartError = nil
+        isStarting = true
         let target = Date().addingTimeInterval(TimeInterval(minutes * 60))
-        endDate = target
-        isActive = true
-        scheduleTimeoutNotification(at: target)
-        startTicker()
-
-        locationManager.requestPermission()
-        locationManager.startTracking()
+        authorizeAndScheduleTimeout(at: target)
     }
 
     /// Only prompts if the user has never been asked — requesting again after
@@ -183,6 +190,8 @@ final class CheckInManager: ObservableObject {
         ticker?.invalidate()
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
         locationManager.stopTracking()
+        UserDefaults.standard.removeObject(forKey: Self.activeKey)
+        UserDefaults.standard.removeObject(forKey: Self.endDateKey)
     }
 
     /// Called from the notification action, or from a manual "今すぐ連絡先に知らせる"
@@ -206,7 +215,34 @@ final class CheckInManager: ObservableObject {
         dailyReminderEnabled = false
     }
 
-    private func scheduleTimeoutNotification(at date: Date) {
+    private func authorizeAndScheduleTimeout(at date: Date) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { [weak self] settings in
+            guard let self else { return }
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                    guard granted, error == nil else {
+                        self.finishStartWithError("通知が許可されていないため、見守りを開始できません。設定アプリで通知を許可してください。")
+                        return
+                    }
+                    center.getNotificationSettings { refreshed in
+                        self.scheduleTimeoutNotification(at: date, settings: refreshed)
+                    }
+                }
+            case .authorized:
+                self.scheduleTimeoutNotification(at: date, settings: settings)
+            default:
+                self.finishStartWithError("通知が許可されていないため、見守りを開始できません。設定アプリで通知を許可してください。")
+            }
+        }
+    }
+
+    private func scheduleTimeoutNotification(at date: Date, settings: UNNotificationSettings) {
+        guard settings.alertSetting == .enabled else {
+            finishStartWithError("通知のバナーが無効なため、見守りを開始できません。設定アプリで通知を有効にしてください。")
+            return
+        }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
 
         let content = UNMutableNotificationContent()
@@ -224,7 +260,31 @@ final class CheckInManager: ObservableObject {
         let interval = max(1, date.timeIntervalSinceNow)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(identifier: notificationId, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request)
+        UNUserNotificationCenter.current().add(request) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.isStarting = false
+                if error != nil {
+                    self.lastStartError = "通知を登録できなかったため、見守りを開始できませんでした。もう一度お試しください。"
+                    return
+                }
+                self.endDate = date
+                self.remainingSeconds = max(0, date.timeIntervalSinceNow)
+                self.isActive = true
+                UserDefaults.standard.set(true, forKey: Self.activeKey)
+                UserDefaults.standard.set(date, forKey: Self.endDateKey)
+                self.startTicker()
+                self.locationManager.requestPermission()
+                self.locationManager.startTracking()
+            }
+        }
+    }
+
+    private func finishStartWithError(_ message: String) {
+        DispatchQueue.main.async { [weak self] in
+            self?.isStarting = false
+            self?.lastStartError = message
+        }
     }
 
     /// Fires once a day at the configured time as a nudge to set up tonight's

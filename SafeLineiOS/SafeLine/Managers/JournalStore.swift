@@ -60,6 +60,10 @@ final class JournalStore: ObservableObject {
     /// launch without telling anyone would be worse than an ugly error banner.
     /// JournalView surfaces this.
     @Published private(set) var lastSaveError: String?
+    /// False when an existing journal could not be decrypted or decoded. Until
+    /// the user explicitly erases it, never overwrite that potentially
+    /// recoverable file with an apparently empty journal.
+    private var canWriteJournal = true
 
     private let fileURL: URL = {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -124,7 +128,13 @@ final class JournalStore: ObservableObject {
             }
         }
         entries.append(entry)
-        save()
+        guard save() else {
+            entries.removeAll { $0.id == entry.id }
+            if photoData != nil {
+                try? FileManager.default.removeItem(at: photoFileURL(for: entry.id))
+            }
+            return
+        }
     }
 
     /// Recomputes the hash from an entry's current stored text/photo and
@@ -152,9 +162,15 @@ final class JournalStore: ObservableObject {
     }
 
     func delete(_ entry: JournalEntry) {
+        let previousEntries = entries
         entries.removeAll { $0.id == entry.id }
-        try? FileManager.default.removeItem(at: photoFileURL(for: entry.id))
-        save()
+        guard save() else {
+            entries = previousEntries
+            return
+        }
+        if entry.hasPhoto {
+            try? FileManager.default.removeItem(at: photoFileURL(for: entry.id))
+        }
     }
 
     /// Decrypts and returns the photo for an entry, if it has one. Called
@@ -170,7 +186,7 @@ final class JournalStore: ObservableObject {
         guard let key = symmetricKey else { return false }
         guard let sealed = try? AES.GCM.seal(data, using: key), let combined = sealed.combined else { return false }
         do {
-            try combined.write(to: photoFileURL(for: id), options: .completeFileProtection)
+            try combined.write(to: photoFileURL(for: id), options: [.atomic, .completeFileProtection])
             var url = photoFileURL(for: id)
             var values = URLResourceValues()
             values.isExcludedFromBackup = true
@@ -195,6 +211,8 @@ final class JournalStore: ObservableObject {
         try? FileManager.default.createDirectory(at: photosDirURL, withIntermediateDirectories: true)
         KeychainStore.delete(Self.keychainKey)
         cachedSymmetricKey = nil
+        canWriteJournal = true
+        lastSaveError = nil
     }
 
     private func load() {
@@ -204,6 +222,8 @@ final class JournalStore: ObservableObject {
             // than crash or leak plaintext. There's nothing to show the user
             // here since this runs at launch, before any view is visible.
             entries = []
+            canWriteJournal = false
+            lastSaveError = "保存済みの記録を開けませんでした。端末のロックを解除して、アプリを開き直してください。"
             return
         }
         do {
@@ -216,31 +236,40 @@ final class JournalStore: ObservableObject {
             // device without passcode-protected Keychain items carrying over).
             // Fail closed — start empty rather than crash or leak plaintext.
             entries = []
+            canWriteJournal = false
+            lastSaveError = "保存済みの記録を読み取れませんでした。データ保護のため、新しい記録では上書きしません。"
         }
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
+        guard canWriteJournal else {
+            lastSaveError = "保存済みの記録を読み取れないため、新しい内容で上書きしませんでした。"
+            return false
+        }
         guard let key = symmetricKey else {
             lastSaveError = "うまく保存できませんでした。この端末にパスコードが設定されているか確認してみてください。"
-            return
+            return false
         }
         do {
             let plain = try JSONEncoder().encode(entries)
             let sealed = try AES.GCM.seal(plain, using: key)
             guard let combined = sealed.combined else {
                 lastSaveError = "うまく保存できませんでした。"
-                return
+                return false
             }
-            try combined.write(to: fileURL, options: .completeFileProtection)
+            try combined.write(to: fileURL, options: [.atomic, .completeFileProtection])
             applyFileProtection()
             excludeFromBackup()
             lastSaveError = nil
+            return true
         } catch {
             // If sealing/writing fails for any reason, skip the write rather
             // than ever persisting plaintext — but tell the user, since
             // `entries` (already updated in memory) will otherwise look saved
             // right up until the app is relaunched and this entry is gone.
             lastSaveError = "うまく保存できませんでした。もう一度試してみてください。"
+            return false
         }
     }
 

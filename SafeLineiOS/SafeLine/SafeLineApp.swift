@@ -31,7 +31,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     let checkInManager = CheckInManager()
     /// Set once by SafeLineApp's `.onAppear` so the notification handler
     /// below can also switch tabs (e.g. daily reminder → 見守り tab).
-    weak var router: AppRouter?
+    weak var router: AppRouter? {
+        didSet {
+            if pendingCheckInNavigation {
+                router?.selectedTab = .checkin
+                pendingCheckInNavigation = false
+            }
+        }
+    }
+    private var pendingCheckInNavigation = false
 
     func application(_ application: UIApplication,
                       didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -62,20 +70,40 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // must only be mutated on main — this is the "無事です" /
         // "連絡先に知らせる" path, the two most safety-critical actions in
         // the app, so this dispatch is not optional polish.
-        DispatchQueue.main.async { [checkInManager, router] in
-            switch response.actionIdentifier {
-            case CheckInManager.safeActionId:
-                checkInManager.markSafe()
-            case CheckInManager.sendActionId:
-                checkInManager.requestSendAlert()
-            case CheckInManager.startCheckinActionId, UNNotificationDefaultActionIdentifier
-                where response.notification.request.content.categoryIdentifier == CheckInManager.dailyReminderCategoryId:
-                checkInManager.requestStartCheckin()
-                router?.selectedTab = .checkin
-            default:
-                break
-            }
+        DispatchQueue.main.async { [weak self] in
+            self?.handleNotificationAction(identifier: response.actionIdentifier,
+                                           category: response.notification.request.content.categoryIdentifier)
+            completionHandler()
         }
-        completionHandler()
+    }
+
+    func handleNotificationAction(identifier: String, category: String) {
+        switch identifier {
+        case CheckInManager.safeActionId:
+            checkInManager.markSafe()
+        case CheckInManager.sendActionId:
+            checkInManager.requestSendAlert()
+            navigateToCheckIn()
+        case CheckInManager.startCheckinActionId:
+            checkInManager.requestStartCheckin()
+            navigateToCheckIn()
+        case UNNotificationDefaultActionIdentifier:
+            if category == CheckInManager.dailyReminderCategoryId {
+                checkInManager.requestStartCheckin()
+                navigateToCheckIn()
+            } else if category == CheckInManager.timeoutCategoryId {
+                navigateToCheckIn()
+            }
+        default:
+            break
+        }
+    }
+
+    private func navigateToCheckIn() {
+        if let router {
+            router.selectedTab = .checkin
+        } else {
+            pendingCheckInNavigation = true
+        }
     }
 }

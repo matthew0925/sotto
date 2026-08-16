@@ -4,18 +4,23 @@ struct SupportResource: Codable, Identifiable {
     var id: String { title }
     let title: String
     let desc: String
-    /// "tel", "url", or "info" (a notice card — non-actionable unless `value`
-    /// carries a link, e.g. to a government page that stays current on its own
-    /// rather than data this static bundle would need to keep re-shipping).
+    /// "contact" or "info". Contact cards expose one or more explicit actions
+    /// rather than using informational tags as ambiguous tap targets.
+    let type: String
+    let actions: [SupportAction]
+}
+
+struct SupportAction: Codable, Identifiable {
+    var id: String { "\(type):\(value):\(label)" }
+    let label: String
+    /// "tel", "url", or "directory" (the in-app government directory).
     let type: String
     let value: String
-    let tags: [String]
 
     var actionURL: URL? {
         switch type {
         case "tel": return URL(string: "tel:\(value)")
         case "url": return URL(string: value)
-        case "info": return value.isEmpty ? nil : URL(string: value)
         default: return nil
         }
     }
