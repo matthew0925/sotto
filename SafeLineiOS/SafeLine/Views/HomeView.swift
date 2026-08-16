@@ -6,18 +6,12 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var manager: CheckInManager
     @EnvironmentObject var router: AppRouter
-    @Environment(\.colorScheme) private var colorScheme
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     private let holdDuration: TimeInterval = 1.5
 
-    /// Dark near-black reads fine against the coral SOS button in Dark Mode
-    /// (7.1:1), but Light Mode's slightly deeper coral only clears 3.96:1
-    /// against it — under the 4.5:1 AA minimum for this text size. White
-    /// clears 4.6:1 there, so swap per color scheme rather than picking one
-    /// color that fails contrast in either appearance.
     private var sosTextColor: Color {
-        colorScheme == .dark ? Color(red: 0.16, green: 0.04, blue: 0.02) : .white
+        .safeCoral
     }
 
     /// Redesigned so the SOS button is the vertical center of the screen —
@@ -30,8 +24,8 @@ struct HomeView: View {
             Color.safeInk.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("いつでも、そばに")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                Text("必要なとき、すぐここから")
+                    .font(.system(.footnote, design: .rounded, weight: .semibold))
                     .foregroundColor(.safeTextFaint)
                     .tracking(1)
                     .padding(.top, 20)
@@ -40,11 +34,12 @@ struct HomeView: View {
 
                 VStack(spacing: 22) {
                     sosButton
-                    Text("押している間だけ発信準備が進みます。離せば止まります。")
-                        .font(.system(size: 13.5, design: .rounded))
-                        .foregroundColor(.safeTextFaint)
+                    Text("触れただけでは発信されません。\n1.5秒長押しすると、110番の発信確認が開きます。")
+                        .font(.system(.footnote, design: .rounded))
+                        .foregroundColor(.safeTextDim)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 48)
+                        .accessibilityIdentifier("home.emergencyExplanation")
                 }
 
                 Spacer()
@@ -65,33 +60,39 @@ struct HomeView: View {
     private var sosButton: some View {
         ZStack {
             Circle()
-                .stroke(Color.safeCoral.opacity(0.25), lineWidth: 1.5)
+                .fill(Color.safeCardFill)
                 .frame(width: 196, height: 196)
+                .overlay(Circle().stroke(Color.safeCoral.opacity(0.45), lineWidth: 2))
 
             Circle()
                 .fill(
-                    RadialGradient(colors: [Color(white: 1.0, opacity: 0.35), .clear],
+                    RadialGradient(colors: [Color.safeCoral.opacity(0.18), Color.safeCoral.opacity(0.08)],
                                    center: .init(x: 0.35, y: 0.3), startRadius: 4, endRadius: 100)
                 )
-                .background(Circle().fill(Color.safeCoral))
+                .background(Circle().fill(Color.safeCardFill))
                 .frame(width: 168, height: 168)
+                .overlay(Circle().stroke(Color.safeCoral.opacity(0.65), lineWidth: 2.5))
                 .overlay(
                     Circle()
                         .trim(from: 0, to: holdProgress)
-                        .stroke(Color.black.opacity(0.25), lineWidth: 168)
-                        .clipShape(Circle())
+                        .stroke(Color.safeCoral, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .padding(5)
                 )
                 .overlay(
                     VStack(spacing: 4) {
-                        Text("長押しでSOS")
-                            .font(.system(size: 17.5, weight: .semibold, design: .rounded))
-                        Text("1.5秒、ゆっくり長押し")
-                            .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                        Image(systemName: "phone.fill")
+                            .font(.system(.title2, design: .rounded, weight: .semibold))
+                            .accessibilityHidden(true)
+                        Text("110番に電話")
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                        Text("1.5秒長押し")
+                            .font(.system(.caption, design: .rounded, weight: .medium))
                             .opacity(0.75)
                     }
                     .foregroundColor(sosTextColor)
                 )
-                .shadow(color: Color.safeCoral.opacity(0.35), radius: 24, y: 12)
+                .shadow(color: Color.safeCoral.opacity(0.12), radius: 12, y: 6)
         }
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -107,8 +108,9 @@ struct HomeView: View {
         // hold serves for sighted/typical touch — no separate hold requirement
         // needed here.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("SOS")
-        .accessibilityHint("ダブルタップすると、110番への発信準備が整います")
+        .accessibilityLabel("110番に電話")
+        .accessibilityHint("ダブルタップすると、110番の発信確認が開きます")
+        .accessibilityIdentifier("home.emergencyCall")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction {
             triggerSOS()
@@ -136,7 +138,7 @@ struct HomeView: View {
     }
 
     private func triggerSOS() {
-        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         withAnimation { holdProgress = 0 }
         callNumber("110")
@@ -163,24 +165,24 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("📍 帰宅チェックイン")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundColor(.safeText)
                 Spacer()
                 Text(manager.isActive ? "見守り中" : "オフ")
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(manager.isActive ? Color.safeTeal.opacity(0.18) : Color.safeCardFillStrong)
                     .foregroundColor(manager.isActive ? .safeTeal : .safeTextFaint)
                     .cornerRadius(99)
             }
             Text("時間になると通知します。通知からメッセージ作成画面を開き、内容を確認して送信できます。")
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeTextDim)
             Button {
                 router.selectedTab = .checkin
             } label: {
                 Text(manager.isActive ? "見守りを確認する" : "設定する")
-                    .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
                     .background(Color.safeTeal)

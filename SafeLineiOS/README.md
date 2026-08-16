@@ -108,7 +108,8 @@ SMS送信（`MFMessageComposeViewController`）はUsage Description不要です
   アプリ名の表示（「そっと」）はどのアイコンを選んでも変わりません。
 
 ## 5. アイコンの切り替え機能について
-`Assets.xcassets`に`AppIcon` / `IconPastel` / `IconMono` / `IconMinimal`の4つの
+`Assets.xcassets`に`AppIcon` / `IconPastelWarm` / `IconPastelCool` / `IconMono` /
+`IconMinimal`の5つの
 App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPreview`等）を同梱済みです。
 `project.yml`の`ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: "YES"`により、
 これらは自動的に代替アイコンとして登録されます（`CFBundleIcons`/`CFBundleAlternateIcons`を
@@ -116,18 +117,19 @@ App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPre
 
 **この設定がないと**、`UIApplication.shared.supportsAlternateIcons`が`false`を返し、
 設定画面のアイコン選択タブが「この端末ではアイコンの切り替えに対応していません」と
-表示されたままになります（実際に発生した不具合で、上記の設定追加とアイコン画像4種の
+表示されたままになります（実際に発生した不具合で、上記の設定追加とアイコン画像5種の
 追加で解消しました）。
 
-現在入っている4種の画像は、2026年時点のiOSアイコンデザインの傾向
+現在入っている5種の画像は、2026年時点のiOSアイコンデザインの傾向
 （単一の分かりやすいモチーフ・滑らかなグラデーション・光の反射による奥行き表現、
 装飾やテキストを避ける）を踏まえてプログラムで生成した仮素材です
 （Apple公式の"Icon Composer"のような専用デザインツールは使っておらず、
 あくまでその設計思想を再現したものです）。ブランドの世界観に基づいた
 プロによるデザインではないため、本番リリース前に実際のデザイン制作に
 差し替えることを推奨します。差し替える場合は`SafeLineiOS/SafeLine/Assets.xcassets/`内の
-`AppIcon.appiconset` / `IconPastel.appiconset` / `IconMono.appiconset` /
-`IconMinimal.appiconset`それぞれの`icon-1024.png`（アルファチャンネルなしの正方形PNG、
+`AppIcon.appiconset` / `IconPastelWarm.appiconset` / `IconPastelCool.appiconset` /
+`IconMono.appiconset` / `IconMinimal.appiconset`それぞれの`icon-1024.png`
+（アルファチャンネルなしの正方形PNG、
 1024×1024推奨）を差し替えてください。あわせて`*Preview.imageset`内の画像も
 同じデザインに更新すると、設定画面のプレビュー表示も一致します。
 
@@ -202,9 +204,11 @@ App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPre
 - **KeychainStoreTests**：Keychainへの保存・取得・上書き・削除が期待通り動くか
 - **CheckInManagerTests**：連絡先の永続化、旧バージョン（単一連絡先）からの
   自動移行、データ全削除で本当に全項目がリセットされるか
+- **SottoUITests**：110番ボタンの安心材料を含む文言、主要タブの画面遷移、
+  相談窓口一覧ボタンが重複していないこと
 
-**まだカバーしていないもの**：SwiftUIビュー（UIテスト）、通知の実際の配信、
-位置情報の実機挙動、ウィジェットの表示。これらは自動テストが原理的に苦手な
+**まだカバーしていないもの**：通知の実際の配信、位置情報の実機挙動、
+ウィジェットの表示、電話・メール等の外部アプリ連携。これらは自動テストが原理的に苦手な
 領域（実機・OS挙動への依存が強い）なので、実機での手動確認が引き続き必要です。
 
 ## 6.8 Siri / ショートカット連携・記録画面の離脱ボタン
@@ -228,7 +232,7 @@ App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPre
 - 相談窓口データの定期更新の仕組み（現状はアプリに同梱したJSONのみ・手動更新）
 - チェックインのバックグラウンド継続性の実機検証（「When In Use」権限のみのため、
   ロック画面が長時間続くと位置更新が止まる制約は上記の通り残っている）
-- アイコン4種の本格的なデザイン（現在はプレースホルダー画像。差し替え手順は本README §5参照）
+- アイコン5種の最終デザイン確認（差し替え手順は本README §5参照）
 - Dynamic Type（文字サイズ設定）への完全対応
 - ウィジェットのライブ更新（チェックイン中の残り時間表示など。App
   Group経由でのデータ共有が必要ですが未実装です）

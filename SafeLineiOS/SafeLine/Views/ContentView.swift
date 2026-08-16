@@ -28,7 +28,10 @@ struct ContentView: View {
                 .tag(AppTab.settings)
         }
         .tint(.safeTeal)
-        .onAppear { showOnboarding = !onboardingCompleted }
+        .onAppear {
+            let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+            showOnboarding = !isUITesting && !onboardingCompleted
+        }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 onboardingCompleted = true

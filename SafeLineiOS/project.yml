@@ -42,10 +42,10 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: XV92DHDWYL
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIconClean
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         # Auto-registers every other App Icon set in Assets.xcassets
-        # (IconPastel/IconMono/IconMinimal) as an alternate icon, matching
+        # (IconPastelWarmClean/IconPastelCoolClean/IconMonoClean/IconMinimalClean) as alternate icons, matching
         # IconManager's AppIconOption raw values — no manual CFBundleIcons/
         # CFBundleAlternateIcons plist entries needed. Without any alternate
         # icon sets actually present in the catalog, UIApplication.shared.
@@ -57,6 +57,7 @@ targets:
       gatherCoverageData: false
       testTargets:
         - SottoTests
+        - SottoUITests
     dependencies:
       - target: SottoWidgetExtension
         embed: true
@@ -67,6 +68,21 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: SottoTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: XV92DHDWYL
+    dependencies:
+      - target: Sotto
+
+  SottoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: SottoUITests
     settings:
       base:
         SWIFT_VERSION: "5.0"

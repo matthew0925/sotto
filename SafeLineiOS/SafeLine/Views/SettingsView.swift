@@ -143,7 +143,7 @@ struct IconPickerView: View {
         ZStack {
             Color.safeInk.ignoresSafeArea()
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 22) {
                     Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
@@ -153,11 +153,14 @@ struct IconPickerView: View {
                             .font(.system(size: 13.5, design: .rounded))
                             .foregroundColor(.safeTextFaint)
                     } else {
-                        HStack(spacing: 12) {
-                            ForEach(AppIconOption.allCases) { option in
-                                iconChoice(option)
-                            }
+                        VStack(spacing: 22) {
+                            iconRow(Array(AppIconOption.allCases.prefix(3)))
+                            iconRow(Array(AppIconOption.allCases.suffix(2)))
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 20)
+                        .background(Color.safeCardFill.opacity(0.55))
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
                         if let error = iconManager.lastErrorMessage {
                             Text(error)
@@ -166,11 +169,21 @@ struct IconPickerView: View {
                         }
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 32)
             }
         }
         .navigationTitle("アイコン")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func iconRow(_ options: [AppIconOption]) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ForEach(options) { option in
+                iconChoice(option)
+            }
+        }
     }
 
     private func iconChoice(_ option: AppIconOption) -> some View {
@@ -179,8 +192,6 @@ struct IconPickerView: View {
             iconManager.setIcon(option)
         } label: {
             VStack(spacing: 6) {
-                // 実際のプレビュー画像はAsset Catalogに追加してください（README §5）。
-                // 画像が未追加でも枠だけは表示され、選択操作自体は動作します。
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.safeCardFillStrong)
                     .overlay(
@@ -188,16 +199,22 @@ struct IconPickerView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     )
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 68, height: 68)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
                             .stroke(isSelected ? Color.safeTeal : .clear, lineWidth: 2)
                     )
                 Text(option.displayName)
                     .font(.system(size: 12.5, design: .rounded))
                     .foregroundColor(isSelected ? .safeTeal : .safeTextFaint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .frame(height: 18, alignment: .top)
             }
+            .frame(maxWidth: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .accessibilityLabel(option.accessibilityName)
     }
 }
