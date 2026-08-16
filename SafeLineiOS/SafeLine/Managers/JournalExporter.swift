@@ -100,7 +100,7 @@ enum JournalExporter {
             y += 16
 
             let photoNote = includePhotos ? "添付写真を含みます。" : "写真は含まれません。"
-            let note = "この端末に保存された記録のみを含みます。\(photoNote)各記録のハッシュ値は、\nその文章と添付写真から再計算できます（作成後に書き換えられていないことの目安です。\n法的な証明として保証するものではありません）。"
+            let note = "この端末に保存された記録のみを含みます。\(photoNote)各記録のハッシュ値は、\nそっとが文章と添付写真から再計算し、作成後に書き換えられていないか確認するための目安です。\n法的な証明として保証するものではありません。"
             note.draw(
                 with: CGRect(x: margin, y: y, width: pageWidth - margin * 2, height: 40),
                 options: [.usesLineFragmentOrigin, .usesFontLeading],

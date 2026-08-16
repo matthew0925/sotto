@@ -19,8 +19,8 @@ struct JournalEntry: Identifiable, Codable {
     /// below for tamper-evidence: see the type-level doc comment on
     /// `JournalStore` for what this does and does not prove.
     var createdAt: Date = Date()
-    /// SHA-256 of the entry's text (plus photo bytes, if attached), computed
-    /// once at creation and never recomputed. Since this app has no "edit an
+    /// Versioned SHA-256 of the entry's text and photo, computed once at
+    /// creation with explicit field boundaries. Since this app has no "edit an
     /// existing entry" feature, the hash simply can't drift from what a
     /// re-hash of the currently-stored text produces — if it ever doesn't
     /// match, something outside this app's normal flow touched the data.
@@ -36,11 +36,11 @@ struct JournalEntry: Identifiable, Codable {
 /// remain as a second layer under the encryption.
 ///
 /// ## Tamper evidence — what this actually proves
-/// Every entry gets a SHA-256 hash + a device-clock timestamp at the moment
+/// Every entry gets a versioned SHA-256 hash + a device-clock timestamp at the moment
 /// it's created (`JournalEntry.contentHash` / `.createdAt`), and there is no
 /// "edit an existing entry" feature anywhere in the app. So: if you show
-/// someone an entry's text next to its hash, they can recompute SHA-256 of
-/// that text themselves and confirm it matches — proving the text hasn't
+/// the app can recompute the hash from the stored text/photo and confirm it
+/// matches — indicating the content hasn't
 /// changed since `createdAt` *as recorded on this device*.
 ///
 /// What it does NOT prove: this is a self-attested hash, not a timestamp from
@@ -128,6 +128,7 @@ final class JournalStore: ObservableObject {
             }
         }
         entries.append(entry)
+        entries.sort { $0.date > $1.date }
         guard save() else {
             entries.removeAll { $0.id == entry.id }
             if photoData != nil {
@@ -149,16 +150,41 @@ final class JournalStore: ObservableObject {
         } else {
             photoData = nil
         }
-        return Self.hash(text: entry.text, photoData: photoData) == entry.contentHash
+        if entry.contentHash.hasPrefix(Self.currentHashPrefix) {
+            return Self.hash(text: entry.text, photoData: photoData) == entry.contentHash
+        }
+        return Self.legacyHash(text: entry.text, photoData: photoData) == entry.contentHash
     }
 
+    private static let currentHashPrefix = "v2:"
+
     static func hash(text: String, photoData: Data?) -> String {
+        let textData = Data(text.utf8)
+        var hasher = SHA256()
+        hasher.update(data: Data("sotto-journal-v2\0text\0".utf8))
+        hasher.update(data: lengthData(textData.count))
+        hasher.update(data: textData)
+        hasher.update(data: Data("photo\0".utf8))
+        if let photoData {
+            hasher.update(data: Data([1]))
+            hasher.update(data: lengthData(photoData.count))
+            hasher.update(data: photoData)
+        } else {
+            hasher.update(data: Data([0]))
+        }
+        return currentHashPrefix + hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func legacyHash(text: String, photoData: Data?) -> String {
         var hasher = SHA256()
         hasher.update(data: Data(text.utf8))
-        if let photoData {
-            hasher.update(data: photoData)
-        }
+        if let photoData { hasher.update(data: photoData) }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func lengthData(_ count: Int) -> Data {
+        var length = UInt64(count).bigEndian
+        return withUnsafeBytes(of: &length) { Data($0) }
     }
 
     func delete(_ entry: JournalEntry) {

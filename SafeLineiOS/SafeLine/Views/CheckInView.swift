@@ -156,7 +156,7 @@ struct CheckInView: View {
         }
         .sheet(isPresented: $showingMessageComposer) {
             if MFMessageComposeViewController.canSendText() {
-                MessageComposerView(recipients: manager.contacts.map(\.phoneNumber),
+                MessageComposerView(recipients: manager.contacts.compactMap(\.dialablePhoneNumber),
                                      body: manager.contactMessage,
                                      mapsLink: manager.locationManager.mapsLink,
                                      deadline: manager.endDate) { result in
@@ -301,15 +301,16 @@ struct CheckInView: View {
                             .foregroundColor(.safeTeal)
                     }
                     .accessibilityLabel(editingContactID == nil ? "連絡先を追加" : "変更を保存")
-                    .disabled(newContactPhone.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(!hasValidNewContactPhone)
                 }
             }
         }
     }
 
     private func saveContact() {
-        let phone = newContactPhone.trimmingCharacters(in: .whitespaces)
-        guard !phone.isEmpty else { return }
+        let enteredPhone = newContactPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidate = EmergencyContact(name: "", phoneNumber: enteredPhone)
+        guard let phone = candidate.dialablePhoneNumber else { return }
         let name = newContactName.trimmingCharacters(in: .whitespaces)
         let resolvedName = name.isEmpty ? "連絡先" : name
 
@@ -320,6 +321,10 @@ struct CheckInView: View {
             manager.contacts.append(EmergencyContact(name: resolvedName, phoneNumber: phone))
         }
         cancelEditingContact()
+    }
+
+    private var hasValidNewContactPhone: Bool {
+        EmergencyContact(name: "", phoneNumber: newContactPhone).dialablePhoneNumber != nil
     }
 
     private func cancelEditingContact() {
@@ -483,7 +488,8 @@ struct SMSUnavailableView: View {
                 .padding(.horizontal, 24)
 
             ForEach(contacts) { contact in
-                if let url = URL(string: "tel:\(contact.phoneNumber)") {
+                if let number = contact.dialablePhoneNumber,
+                   let url = URL(string: "tel:\(number)") {
                     Button {
                         UIApplication.shared.open(url)
                         dismiss()
@@ -538,7 +544,7 @@ struct MessageComposerView: UIViewControllerRepresentable {
         if let mapsLink {
             text += "\n現在地: \(mapsLink)"
         } else {
-            text += "（現在地の共有はお使いの地図アプリからお願いします）"
+            text += "\n（現在地の共有はお使いの地図アプリからお願いします）"
         }
         vc.body = text
         vc.messageComposeDelegate = context.coordinator

@@ -49,8 +49,12 @@ final class CheckInManager: ObservableObject {
     /// latest deadline and message at run time, so ending a check-in prevents
     /// a previously configured automation from sending stale information.
     static func automationSnapshot(now: Date = Date()) -> AutomationSnapshot {
-        let isActive = UserDefaults.standard.bool(forKey: activeKey)
+        let storedActive = UserDefaults.standard.bool(forKey: activeKey)
         let deadline = UserDefaults.standard.object(forKey: endDateKey) as? Date
+        // A partially written/corrupt state with no deadline can never become
+        // overdue. Treat it as inactive so contacts are not exposed through
+        // Shortcuts indefinitely.
+        let isActive = storedActive && deadline != nil
         let contacts: [EmergencyContact]
         if let data = KeychainStore.get(contactsKey),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
@@ -69,9 +73,9 @@ final class CheckInManager: ObservableObject {
         return AutomationSnapshot(
             isActive: isActive,
             isOverdue: isActive && deadline.map { $0 <= now } == true,
-            deadline: deadline,
+            deadline: isActive ? deadline : nil,
             recipients: isActive && deadline.map { $0 <= now } == true
-                ? contacts.map(\.phoneNumber).filter { !$0.isEmpty }
+                ? contacts.compactMap(\.dialablePhoneNumber)
                 : [],
             message: isActive && deadline.map { $0 <= now } == true ? message : ""
         )
@@ -238,7 +242,16 @@ final class CheckInManager: ObservableObject {
 
     func start(minutes: Int, contacts: [EmergencyContact], message: String) {
         guard !isStarting, !isActive else { return }
-        self.contacts = contacts
+        guard (1...1440).contains(minutes) else {
+            lastStartError = "見守り時間を選び直してください。"
+            return
+        }
+        let validContacts = contacts.filter { $0.dialablePhoneNumber != nil }
+        guard !validContacts.isEmpty else {
+            lastStartError = "送信できる電話番号を1件以上登録してください。"
+            return
+        }
+        self.contacts = validContacts
         contactMessage = message
         pendingStartMinutes = nil
         lastStartError = nil
@@ -265,6 +278,7 @@ final class CheckInManager: ObservableObject {
         isActive = false
         endDate = nil
         remainingSeconds = 0
+        wantsToSendAlert = false
         ticker?.invalidate()
         didRequestComposerForCurrentTimeout = false
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])

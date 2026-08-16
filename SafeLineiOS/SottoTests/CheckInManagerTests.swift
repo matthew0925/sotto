@@ -113,6 +113,17 @@ final class CheckInManagerTests: XCTestCase {
         XCTAssertNil(reloaded.endDate)
     }
 
+    func testMarkSafeClearsPendingComposerRequest() {
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        let manager = CheckInManager()
+        XCTAssertTrue(manager.wantsToSendAlert)
+
+        manager.markSafe()
+
+        XCTAssertFalse(manager.wantsToSendAlert)
+    }
+
     func testAutomationSnapshotReturnsSavedDataOnlyWhenOverdue() throws {
         let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
@@ -130,9 +141,40 @@ final class CheckInManagerTests: XCTestCase {
 
         UserDefaults.standard.set(false, forKey: "sotto.checkin.active")
         let inactive = CheckInManager.automationSnapshot()
+        XCTAssertFalse(inactive.isActive)
         XCTAssertFalse(inactive.isOverdue)
+        XCTAssertNil(inactive.deadline)
         XCTAssertTrue(inactive.recipients.isEmpty)
         XCTAssertTrue(inactive.message.isEmpty)
+    }
+
+    func testAutomationSnapshotTreatsMissingDeadlineAsInactive() throws {
+        let contacts = [EmergencyContact(name: "母", phoneNumber: "090-1111-2222")]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.removeObject(forKey: "sotto.checkin.endDate")
+
+        let snapshot = CheckInManager.automationSnapshot()
+
+        XCTAssertFalse(snapshot.isActive)
+        XCTAssertFalse(snapshot.isOverdue)
+        XCTAssertNil(snapshot.deadline)
+        XCTAssertTrue(snapshot.recipients.isEmpty)
+        XCTAssertTrue(snapshot.message.isEmpty)
+    }
+
+    func testAutomationSnapshotNormalizesRecipientPhoneNumbers() throws {
+        let contacts = [
+            EmergencyContact(name: "母", phoneNumber: "090-1111-2222"),
+            EmergencyContact(name: "海外", phoneNumber: "+81 (90) 3333 4444"),
+            EmergencyContact(name: "不正", phoneNumber: "番号なし")
+        ]
+        KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
+        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
+        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+
+        XCTAssertEqual(CheckInManager.automationSnapshot().recipients,
+                       ["09011112222", "+819033334444"])
     }
 }
 

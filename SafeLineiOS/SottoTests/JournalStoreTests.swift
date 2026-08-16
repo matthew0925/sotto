@@ -38,13 +38,20 @@ final class JournalStoreTests: XCTestCase {
 
         XCTAssertEqual(hashA, hashB, "hashing the same text twice must produce the same digest")
         XCTAssertNotEqual(hashA, hashC, "changing even one character must change the hash")
-        XCTAssertEqual(hashA.count, 64, "SHA-256 hex digest should be 64 characters")
+        XCTAssertTrue(hashA.hasPrefix("v2:"))
+        XCTAssertEqual(hashA.count, 67, "version prefix plus SHA-256 hex digest should be 67 characters")
     }
 
     func testHashIncludesPhotoBytes() {
         let textOnly = JournalStore.hash(text: "note", photoData: nil)
         let withPhoto = JournalStore.hash(text: "note", photoData: Data([0x01, 0x02, 0x03]))
         XCTAssertNotEqual(textOnly, withPhoto, "attaching a photo must change the hash, not just the text")
+    }
+
+    func testHashSeparatesTextAndPhotoBoundaries() {
+        let textOnly = JournalStore.hash(text: "abc", photoData: nil)
+        let splitAcrossPhoto = JournalStore.hash(text: "ab", photoData: Data("c".utf8))
+        XCTAssertNotEqual(textOnly, splitAcrossPhoto)
     }
 
     func testVerifyDetectsIntactEntry() {
@@ -56,6 +63,21 @@ final class JournalStoreTests: XCTestCase {
             return XCTFail("entry should have been saved")
         }
         XCTAssertEqual(store.verify(entry), true, "a freshly-saved, untouched entry must verify as intact")
+        store.eraseAll()
+    }
+
+    func testVerifyKeepsPreV2EntriesCompatible() {
+        let store = JournalStore()
+        store.eraseAll()
+        let legacyEntry = JournalEntry(
+            id: UUID(),
+            date: Date(),
+            text: "hello",
+            createdAt: Date(),
+            contentHash: "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        )
+
+        XCTAssertEqual(store.verify(legacyEntry), true)
         store.eraseAll()
     }
 
@@ -92,6 +114,17 @@ final class JournalStoreTests: XCTestCase {
         XCTAssertEqual(store.entries.count, 1)
         XCTAssertFalse(store.entries.contains { $0.id == toDelete.id })
 
+        store.eraseAll()
+    }
+
+    func testEntriesStayNewestFirstImmediatelyAfterAdding() {
+        let store = JournalStore()
+        store.eraseAll()
+        let newer = Date()
+        store.add(text: "newer", date: newer)
+        store.add(text: "older", date: newer.addingTimeInterval(-3600))
+
+        XCTAssertEqual(store.entries.map(\.text), ["newer", "older"])
         store.eraseAll()
     }
 }
