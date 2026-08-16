@@ -152,7 +152,7 @@ final class CheckInManager: ObservableObject {
 
     private func registerNotificationCategories() {
         let safeAction = UNNotificationAction(identifier: Self.safeActionId, title: "無事です", options: [])
-        let sendAction = UNNotificationAction(identifier: Self.sendActionId, title: "連絡先に知らせる", options: [.foreground, .destructive])
+        let sendAction = UNNotificationAction(identifier: Self.sendActionId, title: "SMS作成画面を開く", options: [.foreground])
         let timeoutCategory = UNNotificationCategory(identifier: Self.timeoutCategoryId,
                                                        actions: [safeAction, sendAction],
                                                        intentIdentifiers: [],
@@ -255,7 +255,7 @@ final class CheckInManager: ObservableObject {
 
         let content = UNMutableNotificationContent()
         content.title = "チェックインの時間になりました"
-        content.body = "無事なら「無事です」を、連絡できない状況なら「連絡先に知らせる」をタップしてください。"
+        content.body = "無事なら「無事です」を、連絡先へ伝える場合は「SMS作成画面を開く」をタップし、内容を確認して送信してください。"
         // .defaultCritical requires Apple's separate Critical Alerts entitlement
         // (com.apple.developer.usernotifications.critical-alerts), which is granted
         // only after an individual request/justification to Apple and is unlikely

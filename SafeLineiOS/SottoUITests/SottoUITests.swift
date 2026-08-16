@@ -88,5 +88,6 @@ final class SottoUITests: XCTestCase {
 
         XCTAssertTrue(app.navigationBars["そっとについて"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["プライバシーポリシー"].exists)
+        XCTAssertTrue(app.staticTexts["ショートカットとアクションボタン"].exists)
     }
 }

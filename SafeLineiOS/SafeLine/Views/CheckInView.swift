@@ -41,9 +41,17 @@ struct CheckInView: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.safeText)
 
-                    Text("出かける前にセットしておくと、時間になっても「無事です」を押さなければ、あなたが選んだ人にそっと知らせが届きます。")
+                    Text("出かける前にセットしておくと、時間になったときに通知します。通知から登録した人へのSMS作成画面を開けます。")
                         .font(.system(size: 13.5, design: .rounded))
                         .foregroundColor(.safeTextDim)
+
+                    Label("SMSは自動送信されません。作成画面で内容を確認し、送信を押してください。", systemImage: "hand.tap")
+                        .font(.system(size: 12.5, design: .rounded))
+                        .foregroundColor(.safeTextDim)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.safeCardFill)
+                        .cornerRadius(10)
 
                     timerDisplay
 
@@ -101,7 +109,7 @@ struct CheckInView: View {
                         Button {
                             showingMessageComposer = true
                         } label: {
-                            Text("今すぐ知らせる")
+                            Text("連絡先へのSMSを作成する")
                                 .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
@@ -307,12 +315,12 @@ struct CheckInView: View {
 
     private var locationStatusText: String {
         if manager.locationManager.isPermissionDenied {
-            return "現在地の共有はまだ許可されていません。設定から許可すると、知らせと一緒に現在地もそっと届けられます。"
+            return "現在地の共有はまだ許可されていません。設定から許可すると、SMS本文へ現在地を追加できます。"
         }
         guard let updated = manager.locationManager.lastUpdated else {
             return "現在地を確認しています…"
         }
-        return "現在地を \(Self.timeFormatter.string(from: updated)) ごろ確認しました（知らせと一緒に届きます）"
+        return "現在地を \(Self.timeFormatter.string(from: updated)) ごろ確認しました（SMS本文へ追加します）"
     }
 
     private var timerDisplay: some View {

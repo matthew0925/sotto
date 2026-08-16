@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreLocation
 import UserNotifications
+import AppIntents
 
 /// Restructured as a native Form/Section list (previously a stack of custom
 /// cards) as part of a deliberate declutter pass: Settings is a "calm mode"
@@ -304,6 +305,13 @@ struct AboutSottoView: View {
                     Label("プライバシーポリシー", systemImage: "hand.raised")
                         .font(.system(size: 15, design: .rounded))
                 }
+
+                NavigationLink {
+                    ShortcutGuideView()
+                } label: {
+                    Label("ショートカットとアクションボタン", systemImage: "button.programmable")
+                        .font(.system(size: 15, design: .rounded))
+                }
             }
 
             Section {
@@ -326,6 +334,58 @@ struct AboutSottoView: View {
         .navigationTitle("そっとについて")
         .navigationBarTitleDisplayMode(.inline)
         .tint(.safeTeal)
+    }
+}
+
+struct ShortcutGuideView: View {
+    var body: some View {
+        List {
+            Section {
+                Label("そっとを開く", systemImage: "leaf.fill")
+                Label("見守りを開く", systemImage: "clock.fill")
+                Label("110番への電話画面", systemImage: "phone.fill")
+            } header: {
+                Text("用意されているショートカット")
+            } footer: {
+                Text("画面を開くだけで、発信、SMS送信、見守り開始は自動で行いません。")
+            }
+
+            Section {
+                ShortcutsLink()
+            } header: {
+                Text("ショートカットアプリ")
+            } footer: {
+                Text("「そっと」のショートカットを確認したり、ホーム画面などへ追加したりできます。")
+            }
+
+            Section {
+                guideStep(number: 1, text: "iPhoneの「設定」で「アクションボタン」を開きます。")
+                guideStep(number: 2, text: "「ショートカット」を選びます。")
+                guideStep(number: 3, text: "「そっと」を検索し、使いたい操作を選びます。")
+            } header: {
+                Text("アクションボタンに設定")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.safeInk)
+        .navigationTitle("ショートカット")
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(.safeTeal)
+    }
+
+    private func guideStep(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundColor(.safeOnAccent)
+                .frame(width: 26, height: 26)
+                .background(Color.safeTeal)
+                .clipShape(Circle())
+            Text(text)
+                .font(.system(size: 14.5, design: .rounded))
+                .foregroundColor(.safeText)
+        }
+        .padding(.vertical, 3)
     }
 }
 
