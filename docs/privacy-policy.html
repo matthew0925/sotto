@@ -1,111 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>プライバシーポリシー — そっと（Sotto）</title>
-<style>
-  body{
-    margin:0; padding:0;
-    background:#12172B; color:#F5F7FA;
-    font-family:-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
-    line-height:1.8;
-  }
-  .wrap{max-width:680px; margin:0 auto; padding:48px 24px 80px;}
-  h1{font-size:22px; font-weight:800; margin:0 0 6px;}
-  .updated{color:#9AA3C0; font-size:12.5px; margin:0 0 32px;}
-  h2{font-size:15px; font-weight:700; color:#2EC4B6; margin:32px 0 10px;}
-  p, li{font-size:14px; color:#E3E6F0;}
-  ul{padding-left:1.3em; margin:8px 0;}
-  li{margin-bottom:6px;}
-  strong{color:#fff;}
-  a{color:#2EC4B6;}
-  .contact{
-    margin-top:40px; padding:16px 18px; background:rgba(46,196,182,0.08);
-    border:1px solid rgba(46,196,182,0.25); border-radius:12px; font-size:14px;
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=privacy/">
+  <link rel="canonical" href="privacy/">
+  <title>プライバシーポリシー｜そっと</title>
 </head>
 <body>
-<div class="wrap">
-  <h1>プライバシーポリシー（そっと / Sotto）</h1>
-  <p class="updated">最終更新日：2026年8月11日</p>
-
-  <p>「そっと（Sotto）」（以下「本アプリ」）は、個人の安全確保を目的としたパーソナルセーフティアプリです。本ポリシーは、本アプリがどのような情報を扱うか、そして扱わないかを説明します。</p>
-
-  <h2>1. 基本方針</h2>
-  <p>本アプリは、<strong>アカウント登録を必要とせず、氏名・メールアドレス・電話番号などの個人情報を運営者のサーバーへ送信・収集しません。</strong>データは原則としてすべて、お使いの端末内にのみ保存されます。</p>
-
-  <h2>2. 取得する情報とその扱い</h2>
-  <p><strong>位置情報</strong></p>
-  <ul>
-    <li>「見守りチェックイン」機能を使用している間のみ、端末のGPS機能により現在地を取得します。</li>
-    <li>取得は「使用中のみ」の権限（When In Use）に基づき、常時の位置情報取得は行いません。</li>
-    <li>取得した位置情報は、あなたが指定した連絡先へのSMS作成画面に地図リンクとして自動挿入されるためだけに使用されます。SMSの送信は必ずあなた自身の操作による確認・送信が必要で、アプリが無断で送信することはありません。</li>
-    <li>位置情報が運営者のサーバーに送信されることはありません。</li>
-  </ul>
-
-  <p><strong>記録（ジャーナル）機能</strong></p>
-  <ul>
-    <li>あなたが入力した記録は、端末内で暗号化（AES-GCM）され、端末にのみ保存されます。</li>
-    <li>クラウドやサーバーへの送信・バックアップは一切行いません（iCloud/iTunesの自動バックアップ対象からも除外しています）。</li>
-    <li>表示にはFace ID・Touch ID・端末パスコードによる本人確認が必要です。</li>
-    <li>記録には端末の写真ライブラリから写真を1枚添付できます。添付した写真は本文とは別に、
-      端末内で個別に暗号化して保存されます。写真データが運営者のサーバーや第三者に送信されることは
-      ありません。写真ライブラリへのアクセスは、この添付操作を行う場合にのみ発生します。</li>
-    <li>各記録には、作成時点のハッシュ値（SHA-256）と作成時刻を自動的に記録します。これは
-      本文が作成後に書き換えられていないことをご自身で確認できるようにするための仕組みで、
-      端末内のみで計算され外部に送信されることはありません。法的な証明を保証するものではありません。</li>
-  </ul>
-
-  <p><strong>見守り連絡先・メッセージ文面</strong></p>
-  <ul>
-    <li>チェックイン機能で登録する連絡先（複数登録可能。氏名・電話番号）・メッセージ文面は、
-      端末のKeychain（暗号化された安全な保管領域）にのみ保存されます。</li>
-    <li>運営者を含む第三者がこの情報にアクセスすることはありません。</li>
-  </ul>
-
-  <p><strong>通知</strong></p>
-  <ul>
-    <li>チェックインのタイムアウト通知、および毎日の見守りリマインダー通知は、いずれも
-      端末内で処理されるローカル通知です。外部の通知サーバーを経由しません。</li>
-  </ul>
-
-  <p><strong>ホーム画面・ロック画面ウィジェット</strong></p>
-  <ul>
-    <li>ウィジェットは本アプリを開くための入り口を提供するだけの機能です。ウィジェット自体が
-      位置情報・連絡先・その他のデータを取得したり、外部と通信したりすることはありません。</li>
-  </ul>
-
-  <h2>3. 送信しない情報</h2>
-  <p>本アプリは以下を一切収集しません：</p>
-  <ul>
-    <li>氏名、メールアドレス、電話番号などのアカウント情報</li>
-    <li>行動ログ・利用解析データ</li>
-    <li>広告identifier、トラッキング用の識別子</li>
-    <li>第三者の分析・広告SDK（本アプリにはそのようなSDKを組み込んでいません）</li>
-  </ul>
-
-  <h2>4. データの削除</h2>
-  <p>設定画面から「この端末からすべてのデータを削除」を選択することで、記録・見守り連絡先をいつでも即座に削除できます。この操作は取り消せません。</p>
-
-  <h2>5. 電話・SMS機能について</h2>
-  <p>緊急連絡先への発信・SMS送信には、iOSが標準で提供する電話アプリ・メッセージ作成画面を使用します。これらの通信は端末の通信事業者を経由し、本アプリの運営者を経由しません。</p>
-
-  <h2>6. 相談窓口データ</h2>
-  <p>アプリ内に表示される相談窓口の情報（電話番号・説明文）は、アプリに同梱された静的データであり、利用時に外部へ問い合わせは発生しません。</p>
-
-  <h2>7. 児童のプライバシー</h2>
-  <p>本アプリはアカウント登録を行わないため、年齢確認の仕組みを持ちません。個人情報を収集しない設計そのものが、児童を含むすべての利用者のプライバシーを保護する前提となっています。</p>
-
-  <h2>8. 本ポリシーの変更</h2>
-  <p>本アプリの機能追加等に伴い、本ポリシーの内容を変更する場合があります。重要な変更がある場合は、本ページの「最終更新日」を更新してお知らせします。</p>
-
-  <div class="contact">
-    <strong>お問い合わせ</strong><br>
-    本アプリのプライバシーに関するお問い合わせは、以下までご連絡ください。<br>
-    <a href="mailto:sotto.info@gmail.com">sotto.info@gmail.com</a>
-  </div>
-</div>
+  <p><a href="privacy/">最新のプライバシーポリシーを表示する</a></p>
 </body>
 </html>

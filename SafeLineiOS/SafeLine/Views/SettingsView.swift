@@ -298,6 +298,7 @@ struct AboutSottoView: View {
     let onReplayOnboarding: () -> Void
 
     private let privacyPolicyURL = URL(string: "https://matthew0925.github.io/sotto/privacy/")!
+    private let supportURL = URL(string: "https://matthew0925.github.io/sotto/support/")!
 
     private var versionText: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
@@ -323,6 +324,11 @@ struct AboutSottoView: View {
             Section {
                 Link(destination: privacyPolicyURL) {
                     Label("プライバシーポリシー", systemImage: "hand.raised")
+                        .font(.system(size: 15, design: .rounded))
+                }
+
+                Link(destination: supportURL) {
+                    Label("サポート・お問い合わせ", systemImage: "envelope")
                         .font(.system(size: 15, design: .rounded))
                 }
 
