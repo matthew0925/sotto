@@ -108,10 +108,12 @@ final class CheckInManager: ObservableObject {
         }
 
         let savedMessage = KeychainStore.getString(Self.messageKey)
-        if savedMessage == nil || savedMessage == Self.legacyDefaultContactMessage {
-            contactMessage = Self.defaultContactMessage
+        if savedMessage == nil
+            || savedMessage == Self.legacyDefaultContactMessage
+            || savedMessage == Self.defaultContactMessage {
+            contactMessage = ""
         } else {
-            contactMessage = savedMessage ?? Self.defaultContactMessage
+            contactMessage = savedMessage ?? ""
         }
 
         dailyReminderEnabled = UserDefaults.standard.bool(forKey: Self.dailyReminderEnabledKey)
@@ -217,7 +219,7 @@ final class CheckInManager: ObservableObject {
     func eraseSavedData() {
         markSafe()
         contacts = []
-        contactMessage = Self.defaultContactMessage
+        contactMessage = ""
         dailyReminderEnabled = false
     }
 

@@ -60,7 +60,7 @@ struct CheckInView: View {
                     field(title: "伝えたいメッセージ") {
                         ZStack(alignment: .topLeading) {
                             if manager.contactMessage.isEmpty {
-                                Text("例：見守りをお願いしています。連絡が取れない場合は、電話で確認してください。")
+                                Text(CheckInManager.defaultContactMessage)
                                     .font(.system(size: 14, design: .rounded))
                                     .foregroundColor(.safeTextFaint)
                                     .padding(.horizontal, 5)
@@ -75,7 +75,7 @@ struct CheckInView: View {
                     }
                     .disabled(manager.isActive)
 
-                    Text("この文は編集できます。目安時刻と現在地は、知らせるときに自動で追加されます。")
+                    Text("未入力の場合は、グレーの例文を使用します。目安時刻と現在地は、知らせるときに自動で追加されます。")
                         .font(.system(size: 12.5, design: .rounded))
                         .foregroundColor(.safeTextFaint)
 

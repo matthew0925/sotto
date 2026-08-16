@@ -46,9 +46,23 @@ final class CheckInManagerTests: XCTestCase {
         manager.eraseSavedData()
 
         XCTAssertTrue(manager.contacts.isEmpty)
-        XCTAssertEqual(manager.contactMessage, CheckInManager.defaultContactMessage)
+        XCTAssertTrue(manager.contactMessage.isEmpty)
         XCTAssertFalse(manager.dailyReminderEnabled)
         XCTAssertFalse(manager.isActive)
+    }
+
+    func testPreviousDefaultMessageMigratesToEmptyEditor() {
+        CheckInManager().eraseSavedData()
+        KeychainStore.setString(CheckInManager.defaultContactMessage, for: "sotto.checkin.message")
+
+        XCTAssertTrue(CheckInManager().contactMessage.isEmpty)
+    }
+
+    func testCustomMessageIsNotReplacedDuringMigration() {
+        CheckInManager().eraseSavedData()
+        KeychainStore.setString("駅に着いたら連絡します。", for: "sotto.checkin.message")
+
+        XCTAssertEqual(CheckInManager().contactMessage, "駅に着いたら連絡します。")
     }
 
     func testEmergencyContactRoundTripsThroughJSON() throws {
