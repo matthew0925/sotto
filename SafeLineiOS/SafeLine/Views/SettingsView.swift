@@ -400,6 +400,31 @@ struct ShortcutGuideView: View {
             } header: {
                 Text("アクションボタンに設定")
             }
+
+            Section {
+                Label("見守り情報を取得", systemImage: "message.badge.waveform.fill")
+                Text("見守りの期限が過ぎているか、送信先・メッセージ本文を1回だけ取得します。取得しただけでは何も送信されません。")
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundColor(.safeTextDim)
+            } header: {
+                Text("見守りの自動SMSショートカット")
+            } footer: {
+                Text("上のショートカットアプリボタンから「見守り情報を取得」を単体で実行すると、送信先などの値がその場で表示されます。まずはここで正しい値が取れているか確認するのがおすすめです。")
+            }
+
+            Section {
+                guideStep(number: 1, text: "ショートカットアプリ →「オートメーション」タブ → 右上「＋」→「オートメーションを作成」")
+                guideStep(number: 2, text: "一覧から「アプリ」を選び、「そっと」→「開いたとき」を選んで「完了」（後から時刻トリガー等に変更できます）")
+                guideStep(number: 3, text: "「次へ」で「新規空白オートメーション」を選ぶ（候補テンプレートは選ばない）")
+                guideStep(number: 4, text: "「アクションを追加」→「そっと」を検索 →「見守り情報を取得」を追加")
+                guideStep(number: 5, text: "「アクションを追加」→「もし」を検索して追加し、条件欄で直前の結果から「期限超過」を選び「真」に設定")
+                guideStep(number: 6, text: "「もし」の中に「メッセージを送信」を追加し、宛先・本文の各欄をタップして「送信先」「メッセージ」の変数を選ぶ（直接入力しない）")
+                guideStep(number: 7, text: "「次へ」→「実行前に尋ねる」をオフにして「完了」")
+            } header: {
+                Text("自動SMS化オートメーションの組み立て方")
+            } footer: {
+                Text("手順3で空白オートメーションを選ばなかった場合と、手順6で固定テキストを入力してしまった場合が、うまく動かない一番多い原因です。")
+            }
         }
         .scrollContentBackground(.hidden)
         .background(Color.safeInk)
