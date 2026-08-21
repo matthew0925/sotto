@@ -15,7 +15,7 @@ targets:
     platform: iOS
     deploymentTarget: "16.0"
     sources:
-      - path: SafeLine
+      - path: Sotto
     info:
       path: Generated-Info.plist
       properties:

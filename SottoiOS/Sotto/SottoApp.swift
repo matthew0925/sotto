@@ -2,7 +2,7 @@ import SwiftUI
 import UserNotifications
 
 @main
-struct SafeLineApp: App {
+struct SottoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var journalStore = JournalStore()
     @StateObject private var router = AppRouter()
@@ -29,7 +29,7 @@ struct SafeLineApp: App {
 /// while the app is backgrounded, well outside any view's lifecycle.
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     let checkInManager = CheckInManager()
-    /// Set once by SafeLineApp's `.onAppear` so the notification handler
+    /// Set once by SottoApp's `.onAppear` so the notification handler
     /// below can also switch tabs (e.g. daily reminder → 見守り tab).
     weak var router: AppRouter? {
         didSet {

@@ -18,8 +18,8 @@ Bundle Identifier、Display Nameもこのファイルに定義済みです。
 # 初回のみ（Homebrewが入っていればこの1行）
 brew install xcodegen
 
-# SafeLineiOS ディレクトリで実行
-cd SafeLineiOS
+# SottoiOS ディレクトリで実行
+cd SottoiOS
 xcodegen generate
 
 # 生成された Sotto.xcodeproj を開く
@@ -51,12 +51,11 @@ XcodeGenを使わない場合は、以下の手順でも構築できます。
 1. Xcode →「Create New Project」→「App」
 2. Product Name: `Sotto`（英数字のみ推奨。日本語名は次の手順でDisplay Nameとして設定）、
    Interface: SwiftUI、Language: Swift
-3. 作成後、`SafeLine/`フォルダの中身を、Xcodeが自動生成した同名フォルダに **上書き** してください
-   （`ContentView.swift`と`SafeLineApp.swift`は既存ファイルを置き換える形になります。
-   フォルダ名・Swiftの構造体名`SafeLineApp`は内部識別子なので、そのままでも動作に支障はありません）
+3. 作成後、`Sotto/`フォルダの中身を、Xcodeが自動生成した同名フォルダに **上書き** してください
+   （`ContentView.swift`と`SottoApp.swift`は既存ファイルを置き換える形になります）
 4. ホーム画面に表示される名前を「そっと」にするには、Target →「General」→
    「Display Name」に `そっと` を入力してください（Bundle Nameとは別設定です）
-5. `Resources/resources.json` はXcode上で「Add Files to "SafeLine"...」から追加し、
+5. `Resources/resources.json` はXcode上で「Add Files to "Sotto"...」から追加し、
    Target Membershipにチェックが入っていることを確認してください（Bundleに含める必要があります）
 
 ## 2. Info.plist に追加が必要な項目
@@ -130,7 +129,7 @@ App Icon Setと、それぞれのプレビュー用画像セット（`AppIconPre
 （Apple公式の"Icon Composer"のような専用デザインツールは使っておらず、
 あくまでその設計思想を再現したものです）。ブランドの世界観に基づいた
 プロによるデザインではないため、本番リリース前に実際のデザイン制作に
-差し替えることを推奨します。差し替える場合は`SafeLineiOS/SafeLine/Assets.xcassets/`内の
+差し替えることを推奨します。差し替える場合は`SottoiOS/Sotto/Assets.xcassets/`内の
 `AppIcon.appiconset` / `IconPastelWarm.appiconset` / `IconPastelCool.appiconset` /
 `IconMono.appiconset` / `IconMinimal.appiconset`それぞれの`icon-1024.png`
 （アルファチャンネルなしの正方形PNG、

@@ -45,7 +45,7 @@ final class CheckInManager: ObservableObject {
     private static let dailyReminderHourKey = "sotto.checkin.dailyReminder.hour"
     private static let dailyReminderMinuteKey = "sotto.checkin.dailyReminder.minute"
     private static let dailyReminderDurationKey = "sotto.checkin.dailyReminder.durationMinutes"
-    private static let dailyReminderNotificationId = "safeline.checkin.dailyReminder"
+    private static let dailyReminderNotificationId = "sotto.checkin.dailyReminder"
     private static let activeKey = "sotto.checkin.active"
     private static let endDateKey = "sotto.checkin.endDate"
     private static let sessionIDKey = "sotto.checkin.sessionID"
@@ -196,7 +196,7 @@ final class CheckInManager: ObservableObject {
     /// Prevents the foreground ticker from repeatedly asking the view to
     /// present the composer after the deadline has elapsed.
     private var didRequestComposerForCurrentTimeout = false
-    private let notificationId = "safeline.checkin.timeout"
+    private let notificationId = "sotto.checkin.timeout"
     private var cancellables = Set<AnyCancellable>()
 
     init() {

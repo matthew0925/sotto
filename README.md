@@ -10,17 +10,17 @@
 
 ```
 .
-├── SafeLineiOS/          iOSアプリ本体（SwiftUI + XcodeGen）
-│   ├── SafeLine/          アプリのソースコード
+├── SottoiOS/             iOSアプリ本体（SwiftUI + XcodeGen）
+│   ├── Sotto/              アプリのソースコード
 │   ├── SottoWidget/        ホーム画面／ロック画面ウィジェット
 │   ├── project.yml         XcodeGen設定（1コマンドで.xcodeprojを生成）
 │   └── README.md           iOSアプリのセットアップ手順（まずはここから）
 │
 ├── prototype/
-│   └── safeline.html       ブラウザで動く画面遷移プロトタイプ
+│   └── sotto.html          ブラウザで動く画面遷移プロトタイプ
 │
 └── docs/
-    ├── SafeLine_技術仕様書.md   プロダクトの設計方針・技術仕様
+    ├── Sotto_技術仕様書.md      プロダクトの設計方針・技術仕様
     ├── privacy/                プライバシーポリシー（公開用）
     ├── support/                サポートページ（公開用）
     ├── aso-materials.md        App Store掲載情報（説明文・カテゴリ・審査ノート等）の下書き
@@ -29,9 +29,9 @@
 
 ## はじめに読むもの
 
-- **アプリをビルドしたい** → [`SafeLineiOS/README.md`](SafeLineiOS/README.md)
-- **画面遷移や文言だけ手早く確認したい** → [`prototype/safeline.html`](prototype/safeline.html) をブラウザで開く
-- **プロダクトの設計思想を知りたい** → [`docs/SafeLine_技術仕様書.md`](docs/SafeLine_技術仕様書.md)
+- **アプリをビルドしたい** → [`SottoiOS/README.md`](SottoiOS/README.md)
+- **画面遷移や文言だけ手早く確認したい** → [`prototype/sotto.html`](prototype/sotto.html) をブラウザで開く
+- **プロダクトの設計思想を知りたい** → [`docs/Sotto_技術仕様書.md`](docs/Sotto_技術仕様書.md)
 - **App Store提出の準備状況を見たい** → [`docs/aso-materials.md`](docs/aso-materials.md)
 
 ## 基本方針
