@@ -19,13 +19,32 @@
     --teal:#2FE0C5;
     --teal-dim:rgba(47,224,197,0.16);
     --amber:#F0B84E;
+    --navbar-bg:rgba(16,24,31,0.92);
+  }
+  /* Light mode tokens, taken directly from the Swift app's Assets.xcassets
+     colorsets (Ink/TextPrimary/TextSecondary/CardFill/CardFillStrong/Border/
+     Teal/Coral "any appearance" values) rather than guessed — this prototype
+     is meant to preview the real app, not a separate design. */
+  body.light{
+    --ink:#FBF6F1;
+    --ink-2:#F4EBE3;
+    --panel:#FFFFFF;
+    --line:rgba(46,43,54,0.10);
+    --text:#2E2B36;
+    --text-dim:#635C70;
+    --coral:#C94B3B;
+    --coral-dim:rgba(201,75,59,0.14);
+    --teal:#0FA592;
+    --teal-dim:rgba(15,165,146,0.14);
+    --amber:#B9812E;
+    --navbar-bg:rgba(255,255,255,0.92);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
     margin:0;
     background:
-      radial-gradient(1200px 600px at 50% -10%, #1B2E30 0%, var(--ink) 55%);
+      radial-gradient(1200px 600px at 50% -10%, var(--ink-2) 0%, var(--ink) 55%);
     color:var(--text);
     font-family:'Zen Maru Gothic',sans-serif;
     display:flex;
@@ -255,7 +274,7 @@
   .navbar{
     position:absolute; bottom:0; left:0; right:0;
     display:flex;
-    background:rgba(16,24,31,0.92);
+    background:var(--navbar-bg);
     backdrop-filter:blur(14px);
     border-top:1px solid var(--line);
     padding:10px 8px calc(10px + env(safe-area-inset-bottom));
