@@ -254,13 +254,37 @@ struct SettingsView: View {
     }
 }
 
+/// Numbered step row shared by every step-by-step guide screen in Settings
+/// (PDF export guide, shortcut/automation guide) so the two lists can't drift
+/// in styling the way two independently-maintained copies of the same view
+/// eventually do.
+private struct GuideStepRow: View {
+    let number: Int
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.system(.footnote, design: .rounded, weight: .bold))
+                .foregroundColor(.safeOnAccent)
+                .frame(width: 26, height: 26)
+                .background(Color.safeTeal)
+                .clipShape(Circle())
+            Text(text)
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundColor(.safeText)
+        }
+        .padding(.vertical, 3)
+    }
+}
+
 struct PDFExportGuideView: View {
     var body: some View {
         List {
             Section {
-                guideStep(number: 1, text: "「記録」タブを開き、Face IDまたはパスコードでロックを解除します。")
-                guideStep(number: 2, text: "記録が1件以上あると、画面右上に共有ボタンが表示されます。")
-                guideStep(number: 3, text: "共有ボタンを押し、保存先や共有先を選びます。")
+                GuideStepRow(number: 1, text: "「記録」タブを開き、Face IDまたはパスコードでロックを解除します。")
+                GuideStepRow(number: 2, text: "記録が1件以上あると、画面右上に共有ボタンが表示されます。")
+                GuideStepRow(number: 3, text: "共有ボタンを押し、保存先や共有先を選びます。")
             } header: {
                 Text("書き出し方法")
             }
@@ -276,21 +300,6 @@ struct PDFExportGuideView: View {
         .background(Color.safeInk)
         .navigationTitle("PDF書き出し")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func guideStep(number: Int, text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.system(.footnote, design: .rounded, weight: .bold))
-                .foregroundColor(.safeOnAccent)
-                .frame(width: 26, height: 26)
-                .background(Color.safeTeal)
-                .clipShape(Circle())
-            Text(text)
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundColor(.safeText)
-        }
-        .padding(.vertical, 3)
     }
 }
 
@@ -394,9 +403,9 @@ struct ShortcutGuideView: View {
             }
 
             Section {
-                guideStep(number: 1, text: "iPhoneの「設定」で「アクションボタン」を開きます。")
-                guideStep(number: 2, text: "「ショートカット」を選びます。")
-                guideStep(number: 3, text: "「そっと」を検索し、使いたい操作を選びます。")
+                GuideStepRow(number: 1, text: "iPhoneの「設定」で「アクションボタン」を開きます。")
+                GuideStepRow(number: 2, text: "「ショートカット」を選びます。")
+                GuideStepRow(number: 3, text: "「そっと」を検索し、使いたい操作を選びます。")
             } header: {
                 Text("アクションボタンに設定")
             }
@@ -406,20 +415,23 @@ struct ShortcutGuideView: View {
                 Text("見守りの期限が過ぎているか、送信先・メッセージ本文を1回だけ取得します。取得しただけでは何も送信されません。")
                     .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTextDim)
+                Text("期限を過ぎた見守りに対してこの取得を1回行うと、その回の見守りではオートメーションへの送信先の受け渡しが完了した扱いになり、以降は同じ見守りに対して自動送信されません。")
+                    .font(.system(.footnote, design: .rounded, weight: .semibold))
+                    .foregroundColor(.safeCoral)
             } header: {
                 Text("見守りの自動SMSショートカット")
             } footer: {
-                Text("上のショートカットアプリボタンから「見守り情報を取得」を単体で実行すると、送信先などの値がその場で表示されます。まずはここで正しい値が取れているか確認するのがおすすめです。")
+                Text("動作確認は、見守りの期限が来る前（まだ超過していないとき）に「見守り情報を取得」を単体で実行してください。期限が過ぎてから試すと、本番のオートメーションが送信できなくなります。")
             }
 
             Section {
-                guideStep(number: 1, text: "ショートカットアプリ →「オートメーション」タブ → 右上「＋」→「オートメーションを作成」")
-                guideStep(number: 2, text: "一覧から「アプリ」を選び、「そっと」→「開いたとき」を選んで「完了」（後から時刻トリガー等に変更できます）")
-                guideStep(number: 3, text: "「次へ」で「新規空白オートメーション」を選ぶ（候補テンプレートは選ばない）")
-                guideStep(number: 4, text: "「アクションを追加」→「そっと」を検索 →「見守り情報を取得」を追加")
-                guideStep(number: 5, text: "「アクションを追加」→「もし」を検索して追加し、条件欄で直前の結果から「期限超過」を選び「真」に設定")
-                guideStep(number: 6, text: "「もし」の中に「メッセージを送信」を追加し、宛先・本文の各欄をタップして「送信先」「メッセージ」の変数を選ぶ（直接入力しない）")
-                guideStep(number: 7, text: "「次へ」→「実行前に尋ねる」をオフにして「完了」")
+                GuideStepRow(number: 1, text: "ショートカットアプリ →「オートメーション」タブ → 右上「＋」→「オートメーションを作成」")
+                GuideStepRow(number: 2, text: "一覧から「アプリ」を選び、「そっと」→「開いたとき」を選んで「完了」（後から時刻トリガー等に変更できます）")
+                GuideStepRow(number: 3, text: "「次へ」で「新規空白オートメーション」を選ぶ（候補テンプレートは選ばない）")
+                GuideStepRow(number: 4, text: "「アクションを追加」→「そっと」を検索 →「見守り情報を取得」を追加")
+                GuideStepRow(number: 5, text: "「アクションを追加」→「もし」を検索して追加し、条件欄で直前の結果から「期限超過」を選び「真」に設定")
+                GuideStepRow(number: 6, text: "「もし」の中に「メッセージを送信」を追加し、宛先・本文の各欄をタップして「送信先」「メッセージ」の変数を選ぶ（直接入力しない）")
+                GuideStepRow(number: 7, text: "「次へ」→「実行前に尋ねる」をオフにして「完了」")
             } header: {
                 Text("自動SMS化オートメーションの組み立て方")
             } footer: {
@@ -431,21 +443,6 @@ struct ShortcutGuideView: View {
         .navigationTitle("ショートカット")
         .navigationBarTitleDisplayMode(.inline)
         .tint(.safeTeal)
-    }
-
-    private func guideStep(number: Int, text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.system(.footnote, design: .rounded, weight: .bold))
-                .foregroundColor(.safeOnAccent)
-                .frame(width: 26, height: 26)
-                .background(Color.safeTeal)
-                .clipShape(Circle())
-            Text(text)
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundColor(.safeText)
-        }
-        .padding(.vertical, 3)
     }
 }
 
@@ -469,9 +466,13 @@ struct IconPickerView: View {
                             .font(.system(.footnote, design: .rounded))
                             .foregroundColor(.safeTextFaint)
                     } else {
+                        // Chunked rather than a hardcoded prefix(3)/suffix(2) split so
+                        // adding or removing an AppIconOption case can't silently drop
+                        // an icon out of every row instead of just reflowing.
                         VStack(spacing: 22) {
-                            iconRow(Array(AppIconOption.allCases.prefix(3)))
-                            iconRow(Array(AppIconOption.allCases.suffix(2)))
+                            ForEach(Array(iconRows.enumerated()), id: \.offset) { _, row in
+                                iconRow(row)
+                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 20)
@@ -492,6 +493,12 @@ struct IconPickerView: View {
         }
         .navigationTitle("アイコン")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var iconRows: [[AppIconOption]] {
+        stride(from: 0, to: AppIconOption.allCases.count, by: 3).map { start in
+            Array(AppIconOption.allCases[start..<min(start + 3, AppIconOption.allCases.count)])
+        }
     }
 
     private func iconRow(_ options: [AppIconOption]) -> some View {
