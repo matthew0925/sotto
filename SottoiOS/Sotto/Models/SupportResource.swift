@@ -74,7 +74,13 @@ enum SupportResourceLoader {
     /// resources list that isn't safety-time-critical on any single launch.
     @discardableResult
     static func refreshFromRemote() async -> [SupportResource]? {
-        guard let (data, response) = try? await URLSession.shared.data(from: remoteURL),
+        // A silent background refresh has no business holding the default
+        // 60s timeout on a bad connection — this file is a few KB, so 8s is
+        // generous, and giving up quickly means less battery/data spent on
+        // a request whose result the UI doesn't wait on anyway.
+        var request = URLRequest(url: remoteURL)
+        request.timeoutInterval = 8
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
               let http = response as? HTTPURLResponse, http.statusCode == 200,
               let decoded = try? JSONDecoder().decode([SupportResource].self, from: data),
               !decoded.isEmpty else {
