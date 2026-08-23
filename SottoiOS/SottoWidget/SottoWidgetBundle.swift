@@ -59,8 +59,15 @@ struct SottoTimelineProvider: TimelineProvider {
         // The app calls WidgetCenter.reloadTimelines(ofKind:) the moment a
         // check-in starts or ends, so this policy only needs to cover the
         // in-between case: once the deadline itself passes, ask for a fresh
-        // entry so the widget stops showing a countdown that's hit zero.
-        let policy: TimelineReloadPolicy = entry.checkinEndDate.map { .after($0) } ?? .never
+        // entry so the widget stops showing a countdown that's hit zero. Once
+        // the deadline has already passed (e.g. the check-in timed out and is
+        // waiting on the user, rather than having been marked safe), asking
+        // again with `.after` a date that's already in the past would just
+        // make WidgetKit re-invoke this provider as often as its refresh
+        // budget allows for no visual change, so stop scheduling once we're
+        // already past it.
+        let futureEndDate = entry.checkinEndDate.flatMap { $0 > entry.date ? $0 : nil }
+        let policy: TimelineReloadPolicy = futureEndDate.map { .after($0) } ?? .never
         completion(Timeline(entries: [entry], policy: policy))
     }
 

@@ -55,11 +55,10 @@ final class IconManager: ObservableObject {
     @Published var lastErrorMessage: String?
 
     init() {
-        if let name = UIApplication.shared.alternateIconName,
-           let option = AppIconOption(rawValue: name) {
+        let name = UIApplication.shared.alternateIconName
+        if let name, let option = AppIconOption(rawValue: name) {
             current = option
-        } else if let legacyName = UIApplication.shared.alternateIconName,
-                  let option = Self.legacyOptions[legacyName] {
+        } else if let name, let option = Self.legacyOptions[name] {
             current = option
             // Reapply renamed artwork once so devices do not keep the old
             // pre-rounded icon in SpringBoard's alternate-icon cache.

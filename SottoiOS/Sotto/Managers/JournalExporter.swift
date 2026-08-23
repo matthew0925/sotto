@@ -121,7 +121,14 @@ enum JournalExporter {
                     attributes: [.font: bodyFont],
                     context: nil
                 )
-                let entryHeight = 16 + min(bodySize.height, pageBottom - margin) + 14 + 18
+                // Only require enough room for the date line plus the body's
+                // *first* line here — drawPaginatedBody below already knows
+                // how to continue a body across further pages on its own.
+                // Capping to the full (unpaginated) body height instead would
+                // make this comparison fail for any entry long enough to need
+                // pagination, forcing a page break before that entry even when
+                // most of the current page is still empty.
+                let entryHeight = 16 + min(bodySize.height, bodyFont.lineHeight) + 14 + 18
 
                 if y + entryHeight > pageBottom {
                     beginNewPage()

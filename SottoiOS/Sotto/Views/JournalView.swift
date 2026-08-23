@@ -15,6 +15,7 @@ struct JournalView: View {
     @State private var showingExportGuide = false
     @State private var exportErrorMessage: String?
     @State private var temporaryExportURL: URL?
+    @State private var isExporting = false
     /// Bound to the memo TextEditor. Tapping another tab does NOT
     /// automatically resign a TextEditor's first-responder status in
     /// SwiftUI, which previously left the keyboard covering the screen with
@@ -84,14 +85,23 @@ struct JournalView: View {
                 Button {
                     showingExportOptions = true
                 } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.safeTeal)
-                        .frame(width: 34, height: 34)
-                        .background(Color.safeCardFillStrong)
-                        .clipShape(Circle())
+                    if isExporting {
+                        ProgressView()
+                            .tint(.safeTeal)
+                            .frame(width: 34, height: 34)
+                            .background(Color.safeCardFillStrong)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.safeTeal)
+                            .frame(width: 34, height: 34)
+                            .background(Color.safeCardFillStrong)
+                            .clipShape(Circle())
+                    }
                 }
-                .accessibilityLabel("記録をPDFで共有する")
+                .disabled(isExporting)
+                .accessibilityLabel(isExporting ? "PDFを書き出しています" : "記録をPDFで共有する")
                 .accessibilityIdentifier("journal.pdfShare")
             }
 
@@ -114,18 +124,34 @@ struct JournalView: View {
         .padding(.trailing, 16)
     }
 
+    /// Decryption (AES-GCM, per photo) plus pagination over every entry ran
+    /// synchronously on the main thread here, which could visibly freeze the
+    /// UI for a journal with many entries/photos. `photo(for:)` only reads
+    /// file data and a stored key — no `@Published` mutation — so it's safe
+    /// to call off the main actor from a background Task.
     private func exportPDF(includePhotos: Bool) {
         removeTemporaryExport()
-        do {
-            let url = try JournalExporter.makePDFFile(
-                entries: store.entries,
-                includePhotos: includePhotos,
-                photoProvider: includePhotos ? { store.photo(for: $0) } : nil
-            )
-            temporaryExportURL = url
-            shareItem = ShareItem(url: url)
-        } catch {
-            exportErrorMessage = "一時ファイルを作成できませんでした。端末の空き容量を確認して、もう一度お試しください。"
+        isExporting = true
+        let entries = store.entries
+        let photoProvider: ((JournalEntry) -> Data?)? = includePhotos ? { store.photo(for: $0) } : nil
+        Task(priority: .userInitiated) {
+            do {
+                let url = try JournalExporter.makePDFFile(
+                    entries: entries,
+                    includePhotos: includePhotos,
+                    photoProvider: photoProvider
+                )
+                await MainActor.run {
+                    isExporting = false
+                    temporaryExportURL = url
+                    shareItem = ShareItem(url: url)
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                    exportErrorMessage = "一時ファイルを作成できませんでした。端末の空き容量を確認して、もう一度お試しください。"
+                }
+            }
         }
     }
 
