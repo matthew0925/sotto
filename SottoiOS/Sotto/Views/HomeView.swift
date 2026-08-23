@@ -8,6 +8,8 @@ struct HomeView: View {
     @EnvironmentObject var router: AppRouter
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
+    @State private var hasTriggeredForCurrentPress = false
+    @State private var showCallFailedAlert = false
     private let holdDuration: TimeInterval = 1.5
 
     private var sosTextColor: Color {
@@ -54,6 +56,11 @@ struct HomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
+        }
+        .alert("発信できませんでした", isPresented: $showCallFailedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("110番への発信を開始できませんでした。電話アプリから直接おかけ直しください。")
         }
     }
 
@@ -118,7 +125,15 @@ struct HomeView: View {
     }
 
     private func startHold() {
-        guard holdTimer == nil else { return }
+        // `hasTriggeredForCurrentPress` blocks re-arming: without it, a single
+        // continuous press held past `holdDuration` could fire this again —
+        // DragGesture(minimumDistance: 0) delivers `onChanged` on every touch
+        // update, including the sub-pixel jitter of a finger that never
+        // actually lifted, and each call here would otherwise restart the
+        // countdown and re-trigger `triggerSOS()` (a second 110 dial) for the
+        // same hold. It's cleared only in `cancelHold()`, i.e. once the touch
+        // actually ends.
+        guard holdTimer == nil, !hasTriggeredForCurrentPress else { return }
         let start = Date()
         holdTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { timer in
             let elapsed = Date().timeIntervalSince(start)
@@ -134,10 +149,12 @@ struct HomeView: View {
     private func cancelHold() {
         holdTimer?.invalidate()
         holdTimer = nil
+        hasTriggeredForCurrentPress = false
         withAnimation(.easeOut(duration: 0.2)) { holdProgress = 0 }
     }
 
     private func triggerSOS() {
+        hasTriggeredForCurrentPress = true
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         withAnimation { holdProgress = 0 }
@@ -154,7 +171,14 @@ struct HomeView: View {
 
     private func callNumber(_ number: String) {
         guard let url = URL(string: "tel:\(number)") else { return }
-        UIApplication.shared.open(url)
+        // This is the SOS path: a silent no-op on failure (Airplane Mode, a
+        // restrictions profile blocking Phone, a device with no telephony)
+        // would leave the person believing 110 was dialed when it wasn't, so
+        // an unsuccessful `open` must surface something.
+        UIApplication.shared.open(url, options: [:]) { success in
+            guard !success else { return }
+            showCallFailedAlert = true
+        }
     }
 
     /// The prototype has always had this card; the real app's Home screen
