@@ -64,10 +64,44 @@ final class CheckInManager: ObservableObject {
         UserDefaults(suiteName: appGroupID) ?? .standard
     }
 
+    /// Before this App Group migration, active/endDate/sessionID/claimed lived in
+    /// `.standard`. Anyone who updates mid-check-in must not have that state
+    /// silently vanish just because reads moved to the group container — copy
+    /// it over (once) before anything else touches those keys. Guarded by its
+    /// own flag in `.standard` so this is cheap on every subsequent launch and
+    /// call, including from the Shortcuts process which may invoke
+    /// `automationSnapshot()` without ever going through `init()`.
+    private static let migratedLegacyStateKey = "sotto.checkin.migratedToAppGroup"
+    private static func migrateLegacyStateIfNeeded() {
+        let standard = UserDefaults.standard
+        guard !standard.bool(forKey: migratedLegacyStateKey) else { return }
+        let shared = sharedDefaults
+        if shared !== standard {
+            if standard.object(forKey: activeKey) != nil {
+                shared.set(standard.bool(forKey: activeKey), forKey: activeKey)
+            }
+            if let legacyEndDate = standard.object(forKey: endDateKey) as? Date {
+                shared.set(legacyEndDate, forKey: endDateKey)
+            }
+            if let legacySessionID = standard.string(forKey: sessionIDKey) {
+                shared.set(legacySessionID, forKey: sessionIDKey)
+            }
+            if let legacyClaimed = standard.string(forKey: claimedSessionIDKey) {
+                shared.set(legacyClaimed, forKey: claimedSessionIDKey)
+            }
+            standard.removeObject(forKey: activeKey)
+            standard.removeObject(forKey: endDateKey)
+            standard.removeObject(forKey: sessionIDKey)
+            standard.removeObject(forKey: claimedSessionIDKey)
+        }
+        standard.set(true, forKey: migratedLegacyStateKey)
+    }
+
     /// Read-only bridge used by App Intents. Shortcuts can ask Sotto for the
     /// latest deadline and message at run time, so ending a check-in prevents
     /// a previously configured automation from sending stale information.
     static func automationSnapshot(now: Date = Date(), claimForDelivery: Bool = false) -> AutomationSnapshot {
+        migrateLegacyStateIfNeeded()
         if claimForDelivery { automationLock.lock() }
         defer { if claimForDelivery { automationLock.unlock() } }
 
@@ -212,6 +246,8 @@ final class CheckInManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        Self.migrateLegacyStateIfNeeded()
+
         if let data = KeychainStore.get(Self.contactsKey),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
             contacts = decoded

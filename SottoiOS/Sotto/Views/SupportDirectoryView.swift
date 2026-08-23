@@ -142,10 +142,12 @@ private struct SupportDirectoryWebView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            guard (error as NSError).code != NSURLErrorCancelled else { return }
             loadState = .failed
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            guard (error as NSError).code != NSURLErrorCancelled else { return }
             loadState = .failed
         }
 
