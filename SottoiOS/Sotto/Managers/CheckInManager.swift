@@ -2,6 +2,7 @@ import Foundation
 import UserNotifications
 import Combine
 import Security
+import WidgetKit
 
 /// The app itself cannot silently send an SMS from the background. Its standard
 /// timeout flow is:
@@ -52,6 +53,17 @@ final class CheckInManager: ObservableObject {
     private static let claimedSessionIDKey = "sotto.checkin.automationClaimedSessionID"
     private static let automationLock = NSLock()
 
+    /// Just the active/endDate/sessionID keys live here (not settings like the
+    /// daily reminder) — this is the minimum the widget extension needs to
+    /// show a live countdown, read via the same App Group container rather
+    /// than IPC into the main app's process. Falls back to `.standard` if the
+    /// group container isn't available (e.g. entitlement missing in a given
+    /// build config) so check-in itself never breaks over a widget feature.
+    static let appGroupID = "group.com.takashi.sotto"
+    private static var sharedDefaults: UserDefaults {
+        UserDefaults(suiteName: appGroupID) ?? .standard
+    }
+
     /// Read-only bridge used by App Intents. Shortcuts can ask Sotto for the
     /// latest deadline and message at run time, so ending a check-in prevents
     /// a previously configured automation from sending stale information.
@@ -59,14 +71,14 @@ final class CheckInManager: ObservableObject {
         if claimForDelivery { automationLock.lock() }
         defer { if claimForDelivery { automationLock.unlock() } }
 
-        let storedActive = UserDefaults.standard.bool(forKey: activeKey)
-        let deadline = UserDefaults.standard.object(forKey: endDateKey) as? Date
+        let storedActive = sharedDefaults.bool(forKey: activeKey)
+        let deadline = sharedDefaults.object(forKey: endDateKey) as? Date
         // A partially written/corrupt state with no deadline can never become
         // overdue. Treat it as inactive so contacts are not exposed through
         // Shortcuts indefinitely.
         let isActive = storedActive && deadline != nil
         let sessionID = isActive
-            ? (UserDefaults.standard.string(forKey: sessionIDKey)
+            ? (sharedDefaults.string(forKey: sessionIDKey)
                 ?? deadline.map { "legacy-\($0.timeIntervalSince1970)" })
             : nil
         let contacts: [EmergencyContact]
@@ -86,7 +98,7 @@ final class CheckInManager: ObservableObject {
 
         let deadlinePassed = isActive && deadline.map { $0 <= now } == true
         let recipients = contacts.compactMap(\.dialablePhoneNumber)
-        let claimedSessionID = UserDefaults.standard.string(forKey: claimedSessionIDKey)
+        let claimedSessionID = sharedDefaults.string(forKey: claimedSessionIDKey)
         let alreadyClaimed = sessionID != nil && claimedSessionID == sessionID
         let shouldSend = deadlinePassed && !recipients.isEmpty && !alreadyClaimed
 
@@ -106,7 +118,7 @@ final class CheckInManager: ObservableObject {
         // Claim before returning the payload. Two overlapping automation runs
         // can no longer both receive recipients for the same check-in session.
         if claimForDelivery, shouldSend, let sessionID {
-            UserDefaults.standard.set(sessionID, forKey: claimedSessionIDKey)
+            sharedDefaults.set(sessionID, forKey: claimedSessionIDKey)
         }
 
         return AutomationSnapshot(
@@ -254,8 +266,8 @@ final class CheckInManager: ObservableObject {
             scheduleDailyReminder()
         }
 
-        if UserDefaults.standard.bool(forKey: Self.activeKey),
-           let savedEndDate = UserDefaults.standard.object(forKey: Self.endDateKey) as? Date {
+        if sharedDefaults.bool(forKey: Self.activeKey),
+           let savedEndDate = sharedDefaults.object(forKey: Self.endDateKey) as? Date {
             isActive = true
             endDate = savedEndDate
             remainingSeconds = max(0, savedEndDate.timeIntervalSinceNow)
@@ -328,10 +340,11 @@ final class CheckInManager: ObservableObject {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notificationId])
         locationManager.stopTracking()
-        UserDefaults.standard.removeObject(forKey: Self.activeKey)
-        UserDefaults.standard.removeObject(forKey: Self.endDateKey)
-        UserDefaults.standard.removeObject(forKey: Self.sessionIDKey)
-        UserDefaults.standard.removeObject(forKey: Self.claimedSessionIDKey)
+        sharedDefaults.removeObject(forKey: Self.activeKey)
+        sharedDefaults.removeObject(forKey: Self.endDateKey)
+        sharedDefaults.removeObject(forKey: Self.sessionIDKey)
+        sharedDefaults.removeObject(forKey: Self.claimedSessionIDKey)
+        WidgetCenter.shared.reloadTimelines(ofKind: "SottoCheckinWidget")
     }
 
     /// Called from the notification action, or from a manual "今すぐ連絡先に知らせる"
@@ -415,10 +428,11 @@ final class CheckInManager: ObservableObject {
                 self.remainingSeconds = max(0, date.timeIntervalSinceNow)
                 self.isActive = true
                 self.didRequestComposerForCurrentTimeout = false
-                UserDefaults.standard.set(true, forKey: Self.activeKey)
-                UserDefaults.standard.set(date, forKey: Self.endDateKey)
-                UserDefaults.standard.set(UUID().uuidString, forKey: Self.sessionIDKey)
-                UserDefaults.standard.removeObject(forKey: Self.claimedSessionIDKey)
+                sharedDefaults.set(true, forKey: Self.activeKey)
+                sharedDefaults.set(date, forKey: Self.endDateKey)
+                sharedDefaults.set(UUID().uuidString, forKey: Self.sessionIDKey)
+                sharedDefaults.removeObject(forKey: Self.claimedSessionIDKey)
+                WidgetCenter.shared.reloadTimelines(ofKind: "SottoCheckinWidget")
                 self.startTicker()
                 self.locationManager.requestPermission()
                 self.locationManager.startTracking()

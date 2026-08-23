@@ -34,15 +34,54 @@ struct SupportAction: Codable, Identifiable {
 }
 
 enum SupportResourceLoader {
-    /// Loads the bundled JSON. In production, layer a remote-refresh step on top
-    /// (e.g. fetch an updated JSON from your own static hosting) so hotline info
-    /// doesn't go stale between App Store releases — flagged in the spec as an
-    /// open item worth confirming with a support organization.
+    /// GitHub Pages already serves `docs/` for the privacy policy and support
+    /// pages, so the same static hosting carries this JSON — no separate
+    /// backend needed, and updating a hotline number is a one-line edit +
+    /// push rather than an App Store release.
+    private static let remoteURL = URL(string: "https://matthew0925.github.io/sotto/resources.json")!
+    private static let cacheFilename = "resources_cache.json"
+
+    private static var cacheURL: URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent(cacheFilename)
+    }
+
+    /// Synchronous, always-available fast path: a previously-fetched remote
+    /// copy if one exists, otherwise the bundled JSON shipped with the app.
+    /// Callers show this immediately, then optionally call `refreshFromRemote()`
+    /// to pick up anything newer.
     static func load() -> [SupportResource] {
+        if let cacheURL, let data = try? Data(contentsOf: cacheURL),
+           let decoded = try? JSONDecoder().decode([SupportResource].self, from: data) {
+            return decoded
+        }
+        return loadBundled()
+    }
+
+    static func loadBundled() -> [SupportResource] {
         guard let url = Bundle.main.url(forResource: "resources", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([SupportResource].self, from: data) else {
             return []
+        }
+        return decoded
+    }
+
+    /// Fetches the latest copy and, if it decodes successfully, writes it to
+    /// the on-disk cache and returns it. Returns nil on any failure (offline,
+    /// malformed response, etc.) — callers keep showing whatever `load()`
+    /// already returned rather than blocking or showing an error for a
+    /// resources list that isn't safety-time-critical on any single launch.
+    @discardableResult
+    static func refreshFromRemote() async -> [SupportResource]? {
+        guard let (data, response) = try? await URLSession.shared.data(from: remoteURL),
+              let http = response as? HTTPURLResponse, http.statusCode == 200,
+              let decoded = try? JSONDecoder().decode([SupportResource].self, from: data),
+              !decoded.isEmpty else {
+            return nil
+        }
+        if let cacheURL {
+            try? data.write(to: cacheURL, options: .atomic)
         }
         return decoded
     }

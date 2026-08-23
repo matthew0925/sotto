@@ -33,7 +33,7 @@ struct SettingsView: View {
             Form {
                 Section {
                     Text("名前もメールも要りません。記録は暗号化してこの端末の中だけに残ります。")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(.safeTextDim)
                 }
                 .listRowBackground(Color.clear)
@@ -44,11 +44,11 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("アイコン")
-                                .font(.system(size: 15, design: .rounded))
+                                .font(.system(.callout, design: .rounded))
                                 .foregroundColor(.safeText)
                             Spacer()
                             Text(iconManager.current.displayName)
-                                .font(.system(size: 14, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded))
                                 .foregroundColor(.safeTextFaint)
                         }
                     }
@@ -72,39 +72,39 @@ struct SettingsView: View {
                         openURL(url)
                     } label: {
                         Label("iPhoneの設定を開く", systemImage: "gear")
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(.callout, design: .rounded))
                     }
                 } header: {
                     Text("権限と端末設定")
                 } footer: {
                     Text("権限は必要な機能を使うときに確認します。拒否した権限は、iPhoneの設定から変更できます。")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                 }
                 .listRowBackground(Color.safeCardFill)
 
                 Section {
                     Toggle(isOn: $checkInManager.dailyReminderEnabled) {
                         Text("毎日の見守りリマインダー")
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(.callout, design: .rounded))
                             .foregroundColor(.safeText)
                     }
                     .tint(.safeTeal)
 
                     if checkInManager.dailyReminderEnabled {
                         DatePicker("時刻", selection: $checkInManager.dailyReminderTime, displayedComponents: .hourAndMinute)
-                            .font(.system(size: 14.5, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded))
                             .foregroundColor(.safeText)
 
                         Stepper(value: $checkInManager.dailyReminderDurationMinutes, in: 15...240, step: 15) {
                             Text("目安の見守り時間：\(checkInManager.dailyReminderDurationMinutes)分")
-                                .font(.system(size: 14, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded))
                                 .foregroundColor(.safeTextDim)
                         }
                     }
 
                     HStack {
                         Text("位置情報の更新間隔")
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(.callout, design: .rounded))
                             .foregroundColor(.safeText)
                         Spacer()
                         Menu {
@@ -122,7 +122,7 @@ struct SettingsView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text(selectedIntervalLabel)
-                                    .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                                    .font(.system(.footnote, design: .rounded, weight: .medium))
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.system(size: 9, weight: .semibold))
                             }
@@ -135,7 +135,7 @@ struct SettingsView: View {
                     Text("見守り")
                 } footer: {
                     Text("リマインダーはタイマーを自動で開始せず、見守り画面を開くだけです。位置情報の更新間隔は、短くするほど「今すぐ知らせる」時の位置が新しくなりますが、バッテリー消費が増えます。")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                 }
                 .listRowBackground(Color.safeCardFill)
 
@@ -147,11 +147,11 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Label("そっとについて", systemImage: "info.circle")
-                                .font(.system(size: 15, design: .rounded))
+                                .font(.system(.callout, design: .rounded))
                                 .foregroundColor(.safeText)
                             Spacer()
                             Text(appVersionText)
-                                .font(.system(size: 13.5, design: .rounded))
+                                .font(.system(.footnote, design: .rounded))
                                 .foregroundColor(.safeTextFaint)
                         }
                     }
@@ -163,20 +163,20 @@ struct SettingsView: View {
                         showingEraseConfirm = true
                     } label: {
                         Text("この端末のデータをすべて消す")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(.callout, design: .rounded, weight: .semibold))
                     }
                     .foregroundColor(.safeCoral)
 
                     if didErase {
                         Text("削除しました。")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .foregroundColor(.safeTeal)
                     }
                 } header: {
                     Text("データ")
                 } footer: {
                     Text("記録と見守りの連絡先を、この端末から消します。今つけている見守りも止まります。この操作は取り消せません。")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                 }
                 .listRowBackground(Color.safeCardFill)
             }
@@ -206,11 +206,11 @@ struct SettingsView: View {
     private func permissionRow(title: String, status: String, systemImage: String) -> some View {
         HStack {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 15, design: .rounded))
+                .font(.system(.callout, design: .rounded))
                 .foregroundColor(.safeText)
             Spacer()
             Text(status)
-                .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                .font(.system(.footnote, design: .rounded, weight: .medium))
                 .foregroundColor(.safeTextDim)
         }
         .accessibilityElement(children: .combine)
@@ -281,13 +281,13 @@ struct PDFExportGuideView: View {
     private func guideStep(number: Int, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.footnote, design: .rounded, weight: .bold))
                 .foregroundColor(.safeOnAccent)
                 .frame(width: 26, height: 26)
                 .background(Color.safeTeal)
                 .clipShape(Circle())
             Text(text)
-                .font(.system(size: 14.5, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeText)
         }
         .padding(.vertical, 3)
@@ -310,33 +310,33 @@ struct AboutSottoView: View {
         List {
             Section {
                 Text("そっとは、見守り、相談窓口への連絡、出来事の記録を、自分のペースで使うためのアプリです。")
-                    .font(.system(size: 14.5, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded))
                     .foregroundColor(.safeText)
 
                 Button {
                     onReplayOnboarding()
                 } label: {
                     Label("使い方をもう一度見る", systemImage: "rectangle.on.rectangle")
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(.callout, design: .rounded))
                 }
             }
 
             Section {
                 Link(destination: privacyPolicyURL) {
                     Label("プライバシーポリシー", systemImage: "hand.raised")
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(.callout, design: .rounded))
                 }
 
                 Link(destination: supportURL) {
                     Label("サポート・お問い合わせ", systemImage: "envelope")
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(.callout, design: .rounded))
                 }
 
                 NavigationLink {
                     ShortcutGuideView()
                 } label: {
                     Label("ショートカットとアクションボタン", systemImage: "button.programmable")
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(.callout, design: .rounded))
                 }
             }
 
@@ -381,7 +381,7 @@ struct ShortcutGuideView: View {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("「そっと」のショートカットを開けます。")
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .foregroundColor(.safeTextDim)
                     ShortcutsLink()
                         .shortcutsLinkStyle(.light)
@@ -404,7 +404,7 @@ struct ShortcutGuideView: View {
             Section {
                 Label("見守り情報を取得", systemImage: "message.badge.waveform.fill")
                 Text("見守りの期限が過ぎているか、送信先・メッセージ本文を1回だけ取得します。取得しただけでは何も送信されません。")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTextDim)
             } header: {
                 Text("見守りの自動SMSショートカット")
@@ -436,13 +436,13 @@ struct ShortcutGuideView: View {
     private func guideStep(number: Int, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.footnote, design: .rounded, weight: .bold))
                 .foregroundColor(.safeOnAccent)
                 .frame(width: 26, height: 26)
                 .background(Color.safeTeal)
                 .clipShape(Circle())
             Text(text)
-                .font(.system(size: 14.5, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeText)
         }
         .padding(.vertical, 3)
@@ -461,12 +461,12 @@ struct IconPickerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     Text("ホーム画面の色味や他のアプリのアイコンに合わせて、目立たないデザインを選べます。名前の表示（そっと）は変わりません。")
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
                     if !iconManager.supportsAlternateIcons {
                         Text("この端末ではアイコンの切り替えに対応していません。")
-                            .font(.system(size: 13.5, design: .rounded))
+                            .font(.system(.footnote, design: .rounded))
                             .foregroundColor(.safeTextFaint)
                     } else {
                         VStack(spacing: 22) {
@@ -480,7 +480,7 @@ struct IconPickerView: View {
 
                         if let error = iconManager.lastErrorMessage {
                             Text(error)
-                                .font(.system(size: 12.5, design: .rounded))
+                                .font(.system(.caption, design: .rounded))
                                 .foregroundColor(.safeCoral)
                         }
                     }
@@ -522,7 +522,7 @@ struct IconPickerView: View {
                             .stroke(isSelected ? Color.safeTeal : .clear, lineWidth: 2)
                     )
                 Text(option.displayName)
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundColor(isSelected ? .safeTeal : .safeTextFaint)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)

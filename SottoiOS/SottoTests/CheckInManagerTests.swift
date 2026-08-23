@@ -78,8 +78,8 @@ final class CheckInManagerTests: XCTestCase {
 
     func testActiveCheckInRestoresAfterProcessRelaunch() {
         let endDate = Date().addingTimeInterval(600)
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(endDate, forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(endDate, forKey: "sotto.checkin.endDate")
 
         let restored = CheckInManager()
 
@@ -91,8 +91,8 @@ final class CheckInManagerTests: XCTestCase {
     }
 
     func testOverdueCheckInRequestsComposerAfterProcessRelaunch() {
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
 
         let restored = CheckInManager()
 
@@ -102,8 +102,8 @@ final class CheckInManagerTests: XCTestCase {
     }
 
     func testMarkSafeClearsPersistedActiveState() {
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(600), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(600), forKey: "sotto.checkin.endDate")
 
         let manager = CheckInManager()
         manager.markSafe()
@@ -114,8 +114,8 @@ final class CheckInManagerTests: XCTestCase {
     }
 
     func testMarkSafeClearsPendingComposerRequest() {
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
         let manager = CheckInManager()
         XCTAssertTrue(manager.wantsToSendAlert)
 
@@ -129,8 +129,8 @@ final class CheckInManagerTests: XCTestCase {
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
         KeychainStore.setString("帰宅していません。", for: "sotto.checkin.message")
         let deadline = Date().addingTimeInterval(-60)
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(deadline, forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(deadline, forKey: "sotto.checkin.endDate")
 
         let overdue = CheckInManager.automationSnapshot()
         XCTAssertTrue(overdue.isActive)
@@ -139,7 +139,7 @@ final class CheckInManagerTests: XCTestCase {
         XCTAssertTrue(overdue.message.contains("帰宅していません。"))
         XCTAssertTrue(overdue.message.contains("見守りの目安時刻"))
 
-        UserDefaults.standard.set(false, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(false, forKey: "sotto.checkin.active")
         let inactive = CheckInManager.automationSnapshot()
         XCTAssertFalse(inactive.isActive)
         XCTAssertFalse(inactive.isOverdue)
@@ -151,8 +151,8 @@ final class CheckInManagerTests: XCTestCase {
     func testAutomationSnapshotTreatsMissingDeadlineAsInactive() throws {
         let contacts = [EmergencyContact(name: "母", phoneNumber: "090-1111-2222")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.endDate")
 
         let snapshot = CheckInManager.automationSnapshot()
 
@@ -170,8 +170,8 @@ final class CheckInManagerTests: XCTestCase {
             EmergencyContact(name: "不正", phoneNumber: "番号なし")
         ]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
 
         XCTAssertEqual(CheckInManager.automationSnapshot().recipients,
                        ["09011112222", "+819033334444"])
@@ -180,10 +180,10 @@ final class CheckInManagerTests: XCTestCase {
     func testAutomationDeliveryCanBeClaimedOnlyOncePerSession() throws {
         let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
-        UserDefaults.standard.set("session-a", forKey: "sotto.checkin.sessionID")
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set("session-a", forKey: "sotto.checkin.sessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
 
         let first = CheckInManager.automationSnapshot(claimForDelivery: true)
         let second = CheckInManager.automationSnapshot(claimForDelivery: true)
@@ -201,10 +201,10 @@ final class CheckInManagerTests: XCTestCase {
     func testNewAutomationSessionCanDeliverAfterPreviousSessionWasClaimed() throws {
         let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
-        UserDefaults.standard.set("session-b", forKey: "sotto.checkin.sessionID")
-        UserDefaults.standard.set("session-a", forKey: "sotto.checkin.automationClaimedSessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set("session-b", forKey: "sotto.checkin.sessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set("session-a", forKey: "sotto.checkin.automationClaimedSessionID")
 
         let snapshot = CheckInManager.automationSnapshot(claimForDelivery: true)
 
@@ -215,25 +215,25 @@ final class CheckInManagerTests: XCTestCase {
     func testAutomationReportsConfigurationErrorWithoutClaiming() throws {
         let contacts = [EmergencyContact(name: "不正", phoneNumber: "番号なし")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
-        UserDefaults.standard.set("session-invalid", forKey: "sotto.checkin.sessionID")
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set("session-invalid", forKey: "sotto.checkin.sessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
 
         let snapshot = CheckInManager.automationSnapshot(claimForDelivery: true)
 
         XCTAssertFalse(snapshot.shouldSend)
         XCTAssertEqual(snapshot.deliveryStatus, "設定不備")
-        XCTAssertNil(UserDefaults.standard.string(forKey: "sotto.checkin.automationClaimedSessionID"))
+        XCTAssertNil(UserDefaults(suiteName: "group.com.takashi.sotto")!.string(forKey: "sotto.checkin.automationClaimedSessionID"))
     }
 
     func testConcurrentAutomationRunsExposePayloadExactlyOnce() throws {
         let contacts = [EmergencyContact(name: "母", phoneNumber: "09011112222")]
         KeychainStore.set(try JSONEncoder().encode(contacts), for: "sotto.checkin.contacts")
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
-        UserDefaults.standard.set("session-concurrent", forKey: "sotto.checkin.sessionID")
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set("session-concurrent", forKey: "sotto.checkin.sessionID")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.automationClaimedSessionID")
 
         let resultLock = NSLock()
         var results: [CheckInManager.AutomationSnapshot] = []
@@ -252,14 +252,14 @@ final class CheckInManagerTests: XCTestCase {
 
 final class NotificationRoutingTests: XCTestCase {
     override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.active")
-        UserDefaults.standard.removeObject(forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.removeObject(forKey: "sotto.checkin.endDate")
         super.tearDown()
     }
 
     private func makeActiveDelegate() -> AppDelegate {
-        UserDefaults.standard.set(true, forKey: "sotto.checkin.active")
-        UserDefaults.standard.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(true, forKey: "sotto.checkin.active")
+        UserDefaults(suiteName: "group.com.takashi.sotto")!.set(Date().addingTimeInterval(-60), forKey: "sotto.checkin.endDate")
         return AppDelegate()
     }
 

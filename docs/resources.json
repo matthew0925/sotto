@@ -1,0 +1,51 @@
+[
+  {
+    "title": "#8891（はやくワンストップ）",
+    "desc": "性犯罪・性暴力の被害について相談できます。発信した地域のワンストップ支援センターにつながります。",
+    "type": "contact",
+    "actions": [
+      { "label": "#8891に電話する", "type": "tel", "value": "#8891" }
+    ]
+  },
+  {
+    "title": "内閣府 性犯罪・性暴力の相談窓口一覧",
+    "desc": "全国のワンストップ支援センターと、各窓口の受付時間・電話・メール・ホームページを確認できます。",
+    "type": "contact",
+    "actions": [
+      { "label": "全国の窓口一覧", "type": "directory", "value": "https://www.gender.go.jp/policy/no_violence/seibouryoku/consult.html" }
+    ]
+  },
+  {
+    "title": "#8008（DV相談ナビ）",
+    "desc": "配偶者やパートナーからの暴力について相談できます。最寄りの相談窓口につながります。受付時間は窓口ごとに異なり、通話料がかかります。",
+    "type": "contact",
+    "actions": [
+      { "label": "#8008に電話する", "type": "tel", "value": "#8008" }
+    ]
+  },
+  {
+    "title": "DV相談＋（プラス）",
+    "desc": "配偶者やパートナーからの暴力について相談できます。電話は24時間、チャットは毎日12時から22時まで受け付けています。",
+    "type": "contact",
+    "actions": [
+      { "label": "電話で相談する", "type": "tel", "value": "0120279889" },
+      { "label": "チャットで相談する", "type": "url", "value": "https://form.soudanplus.jp/ja" }
+    ]
+  },
+  {
+    "title": "110番（警察）",
+    "desc": "今まさに危険が迫っているときは、110番へ電話してください。",
+    "type": "contact",
+    "actions": [
+      { "label": "110番に電話する", "type": "tel", "value": "110" }
+    ]
+  },
+  {
+    "title": "緊急避妊について",
+    "desc": "緊急避妊薬は、性交後72時間以内の服用が必要です。できるだけ早く医療機関や対応薬局へ相談してください。厚生労働省の最新の販売薬局一覧を確認できます。",
+    "type": "info",
+    "actions": [
+      { "label": "販売薬局を探す", "type": "url", "value": "https://www.mhlw.go.jp/stf/kinnkyuuhininnyaku_00005.html" }
+    ]
+  }
+]

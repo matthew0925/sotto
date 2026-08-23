@@ -40,15 +40,15 @@ struct CheckInView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("見守りチェックイン")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.system(.title2, design: .rounded, weight: .semibold))
                         .foregroundColor(.safeText)
 
                     Text("出かける前にセットしておくと、時間になったときに通知します。通知から登録した人へのSMS作成画面を開けます。")
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
                     Label("通常はSMS作成画面で送信を押します。自動送信は下のショートカット設定が必要です。", systemImage: "hand.tap")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(.safeTextDim)
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -59,7 +59,7 @@ struct CheckInView: View {
                         showingAutomationGuide = true
                     } label: {
                         Label("自動SMSショートカットを設定", systemImage: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 11)
                             .background(Color.safeTeal.opacity(0.14))
@@ -84,7 +84,7 @@ struct CheckInView: View {
                         ZStack(alignment: .topLeading) {
                             if manager.contactMessage.isEmpty {
                                 Text(CheckInManager.defaultContactMessage)
-                                    .font(.system(size: 14, design: .rounded))
+                                    .font(.system(.subheadline, design: .rounded))
                                     .foregroundColor(.safeTextFaint)
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 8)
@@ -99,12 +99,12 @@ struct CheckInView: View {
                     .disabled(manager.isActive)
 
                     Text("未入力の場合は、グレーの例文を使用します。目安時刻と現在地は、知らせるときに自動で追加されます。")
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(.safeTextFaint)
 
                     Button(action: primaryAction) {
                         Text(manager.isActive ? "無事です（見守りを終える）" : manager.isStarting ? "通知を確認しています…" : "この内容で見守りをはじめる")
-                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                            .font(.system(.callout, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(manager.contacts.isEmpty && !manager.isActive ? Color.safeCardFillStrong : Color.safeTeal)
@@ -115,7 +115,7 @@ struct CheckInView: View {
 
                     if let error = manager.lastStartError {
                         Text(error)
-                            .font(.system(size: 13, design: .rounded))
+                            .font(.system(.footnote, design: .rounded))
                             .foregroundColor(.safeCoral)
                             .accessibilityLabel("見守りを開始できませんでした。\(error)")
                     }
@@ -125,7 +125,7 @@ struct CheckInView: View {
                             showingMessageComposer = true
                         } label: {
                             Text("連絡先へのSMSを作成する")
-                                .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Color.safeCoral.opacity(0.15))
@@ -209,22 +209,22 @@ struct CheckInView: View {
     private var contactsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("知らせたい人")
-                .font(.system(size: 13.5, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundColor(.safeTextFaint)
 
             if manager.contacts.isEmpty {
                 Text("まだ誰も登録されていません。下から追加してください。")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTextFaint)
             } else {
                 ForEach(manager.contacts) { contact in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(contact.name)
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded, weight: .medium))
                                 .foregroundColor(.safeText)
                             Text(contact.phoneNumber)
-                                .font(.system(size: 12.5, design: .monospaced))
+                                .font(.system(.caption, design: .monospaced))
                                 .foregroundColor(.safeTextDim)
                         }
                         Spacer()
@@ -265,7 +265,7 @@ struct CheckInView: View {
                         .focused($focusedField, equals: .contactName)
                         .submitLabel(.next)
                         .onSubmit { focusedField = .contactPhone }
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .padding(10)
                         .background(Color.safeCardFill)
                         .cornerRadius(10)
@@ -275,7 +275,7 @@ struct CheckInView: View {
                     TextField("電話番号", text: $newContactPhone)
                         .focused($focusedField, equals: .contactPhone)
                         .keyboardType(.phonePad)
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .padding(10)
                         .background(Color.safeCardFill)
                         .cornerRadius(10)
@@ -339,7 +339,7 @@ struct CheckInView: View {
             Image(systemName: "location.fill")
                 .font(.system(size: 12.5, design: .rounded))
             Text(locationStatusText)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
         }
         .foregroundColor(.safeTextFaint)
     }
@@ -360,7 +360,7 @@ struct CheckInView: View {
                 .font(.system(size: 52, weight: .semibold, design: .monospaced))
                 .foregroundColor(.safeText)
             Text(manager.isActive ? "\(Int(manager.remainingSeconds/60))分以内に「無事です」を教えてください" : "まだ何も始まっていません")
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeTextFaint)
         }
         .frame(maxWidth: .infinity)
@@ -371,7 +371,7 @@ struct CheckInView: View {
         let isSelected = selectedMinutes == minutes
         return Button { selectedMinutes = minutes } label: {
             Text(minutes < 60 ? "\(minutes)分" : "\(minutes/60)時間")
-                .font(.system(size: 14.5, weight: isSelected ? .semibold : .regular, design: .monospaced))
+                .font(.system(.subheadline, design: .monospaced, weight: isSelected ? .semibold : .regular))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(isSelected ? Color.safeTeal.opacity(0.18) : Color.safeCardFill)
@@ -386,7 +386,7 @@ struct CheckInView: View {
 
     private func field<V: View>(title: String, @ViewBuilder content: () -> V) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 13.5, design: .rounded)).foregroundColor(.safeTextFaint)
+            Text(title).font(.system(.footnote, design: .rounded)).foregroundColor(.safeTextFaint)
             content()
                 .padding(10)
                 .background(Color.safeCardFill)
@@ -453,13 +453,13 @@ private struct AutomaticSMSGuideView: View {
     private func automationStep(_ number: Int, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.footnote, design: .rounded, weight: .bold))
                 .foregroundColor(.safeOnAccent)
                 .frame(width: 26, height: 26)
                 .background(Color.safeTeal)
                 .clipShape(Circle())
             Text(text)
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeText)
         }
         .padding(.vertical, 3)
@@ -479,10 +479,10 @@ struct SMSUnavailableView: View {
                 .font(.system(size: 30, design: .rounded))
                 .foregroundColor(.safeCoral)
             Text("メッセージを送ることができませんでした")
-                .font(.system(size: 17.5, weight: .semibold, design: .rounded))
+                .font(.system(.headline, design: .rounded, weight: .semibold))
                 .multilineTextAlignment(.center)
             Text("かわりに、電話でつながることができます。")
-                .font(.system(size: 14.5, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeTextDim)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -495,7 +495,7 @@ struct SMSUnavailableView: View {
                         dismiss()
                     } label: {
                         Text("\(contact.name)に電話をかける")
-                            .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                            .font(.system(.callout, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(Color.safeTeal)

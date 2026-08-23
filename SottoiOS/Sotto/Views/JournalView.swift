@@ -142,11 +142,11 @@ struct JournalView: View {
                 .font(.system(size: 32, design: .rounded))
                 .foregroundColor(.safeTeal)
             Text("記録は守られています")
-                .font(.system(size: 16.5, weight: .semibold, design: .rounded))
+                .font(.system(.body, design: .rounded, weight: .semibold))
                 .foregroundColor(.safeText)
             if let error = lock.lastError {
                 Text(error)
-                    .font(.system(size: 13.5, design: .rounded))
+                    .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTextFaint)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
@@ -155,7 +155,7 @@ struct JournalView: View {
                 lock.authenticate()
             } label: {
                 Text("Face ID / パスコードで開く")
-                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                    .font(.system(.callout, design: .rounded, weight: .semibold))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .background(Color.safeTeal)
@@ -171,13 +171,13 @@ struct JournalView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     Text("記録（この端末だけに）")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.system(.title2, design: .rounded, weight: .semibold))
                         .foregroundColor(.safeText)
                     Spacer()
                 }
                 .padding(.trailing, store.entries.isEmpty ? 42 : 86)
                 Text("気になったこと、違和感、出来事の日時や状況を、思い出せる範囲で少しずつ残せます。暗号化してこの端末の中だけに残ります。誰にも見せなくて大丈夫です。あなたのための記録です。")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTextDim)
 
                 pdfExportGuideButton
@@ -216,7 +216,7 @@ struct JournalView: View {
                     }
                 } label: {
                     Text("そっと保存する")
-                        .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                        .font(.system(.callout, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(Color.safeTeal)
@@ -226,13 +226,13 @@ struct JournalView: View {
 
                 if let saveError = store.lastSaveError {
                     Text("⚠️ \(saveError)")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .foregroundColor(.safeCoral)
                 }
 
                 if store.entries.isEmpty {
                     Text("まだ記録はありません。\n思い出せるときに、少しずつで大丈夫です。")
-                        .font(.system(size: 14.5, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded))
                         .foregroundColor(.safeTextFaint)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
@@ -254,7 +254,7 @@ struct JournalView: View {
             showingExportGuide = true
         } label: {
             Label("PDF書き出しの使い方", systemImage: "doc.richtext")
-                .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                .font(.system(.footnote, design: .rounded, weight: .medium))
                 .foregroundColor(.safeTeal)
         }
         .accessibilityIdentifier("journal.pdfGuide")
@@ -265,7 +265,7 @@ struct JournalView: View {
             PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                 Label(selectedPhotoData == nil ? "写真を添付" : "写真を変更",
                       systemImage: "photo.on.rectangle")
-                    .font(.system(size: 13.5, design: .rounded))
+                    .font(.system(.footnote, design: .rounded))
                     .foregroundColor(.safeTeal)
             }
             .onChange(of: selectedPhotoItem) { item in
@@ -308,10 +308,10 @@ private struct JournalEntryRow: View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(entry.date.formatted(date: .abbreviated, time: .shortened))
-                    .font(.system(size: 12.5, design: .monospaced))
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(.safeTeal)
                 Text(entry.text)
-                    .font(.system(size: 14.5, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded))
                     .foregroundColor(.safeText)
                 integrityFooter
             }
@@ -378,7 +378,7 @@ private struct JournalEntryRow: View {
             Image(systemName: verified == false ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
                 .font(.system(size: 9))
             Text(footerText)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.system(.caption2, design: .monospaced))
         }
         .foregroundColor(verified == false ? .safeCoral : .safeTextFaint)
         .padding(.top, 2)

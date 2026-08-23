@@ -16,10 +16,10 @@ struct ResourcesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("相談窓口")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.system(.title2, design: .rounded, weight: .semibold))
                         .foregroundColor(.safeText)
                     Text("一人で抱え込まなくていい場所です。年齢・性別を問わず相談できます。あなたは悪くありません。")
-                        .font(.system(size: 13.5, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .foregroundColor(.safeTextDim)
 
                     ForEach(resources) { resource in
@@ -36,17 +36,24 @@ struct ResourcesView: View {
         .sheet(item: $browserDestination) { destination in
             SupportDirectoryView(url: destination.url, title: destination.title)
         }
+        .task {
+            // Swap in a fresher copy if one's available — silent no-op on
+            // failure so a flaky connection never blocks or errors this list.
+            if let fresh = await SupportResourceLoader.refreshFromRemote() {
+                resources = fresh
+            }
+        }
     }
 
     private func resourceCardBody(_ resource: SupportResource) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(resource.title)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(.body, design: .rounded, weight: .semibold))
                 .foregroundColor(.safeText)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
             Text(resource.desc)
-                .font(.system(size: 12.5, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundColor(.safeTextDim)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
@@ -66,12 +73,12 @@ struct ResourcesView: View {
     private func noticeCard(_ resource: SupportResource) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(resource.title)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(.body, design: .rounded, weight: .semibold))
                 .foregroundColor(.safeCoral)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
             Text(resource.desc)
-                .font(.system(size: 12.5, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundColor(.safeTextDim)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
@@ -92,7 +99,7 @@ struct ResourcesView: View {
                     perform(action, resourceTitle: resource.title)
                 } label: {
                     Label(action.label, systemImage: iconName(for: action.type))
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(.footnote, design: .rounded, weight: .semibold))
                         .padding(.horizontal, 11)
                         .padding(.vertical, 8)
                         .background(resource.type == "info" ? Color.safeCoral.opacity(0.14) : Color.safeTeal.opacity(0.16))

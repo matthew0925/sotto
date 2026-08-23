@@ -51,7 +51,7 @@ struct OnboardingView: View {
                     }
                 } label: {
                     Text(page < pages.count - 1 ? "次へ" : "はじめる")
-                        .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                        .font(.system(.callout, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
                         .background(Color.safeTeal)
@@ -63,7 +63,7 @@ struct OnboardingView: View {
 
                 if page < pages.count - 1 {
                     Button("スキップ") { onFinish() }
-                        .font(.system(size: 13, design: .rounded))
+                        .font(.system(.footnote, design: .rounded))
                         .foregroundColor(.safeTextFaint)
                         .padding(.bottom, 24)
                 } else {
@@ -83,11 +83,11 @@ struct OnboardingView: View {
                 .background(Color.safeCardFill)
                 .clipShape(Circle())
             Text(page.title)
-                .font(.system(size: 21, weight: .semibold, design: .rounded))
+                .font(.system(.title3, design: .rounded, weight: .semibold))
                 .foregroundColor(.safeText)
                 .multilineTextAlignment(.center)
             Text(page.body)
-                .font(.system(size: 14.5, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.safeTextDim)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
