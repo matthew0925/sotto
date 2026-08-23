@@ -5,6 +5,10 @@ struct ContentView: View {
     @AppStorage("sotto.onboarding.completed") private var onboardingCompleted = false
     @State private var showOnboarding = false
 
+    private static var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("-ui-testing")
+    }
+
     var body: some View {
         TabView(selection: $router.selectedTab) {
             HomeView()
@@ -29,12 +33,10 @@ struct ContentView: View {
         }
         .tint(.safeTeal)
         .onAppear {
-            let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
-            showOnboarding = !isUITesting && !onboardingCompleted
+            showOnboarding = !Self.isUITesting && !onboardingCompleted
         }
         .onChange(of: onboardingCompleted) { completed in
-            let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
-            if !isUITesting && !completed {
+            if !Self.isUITesting && !completed {
                 showOnboarding = true
             }
         }
