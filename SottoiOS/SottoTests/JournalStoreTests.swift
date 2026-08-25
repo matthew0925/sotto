@@ -49,9 +49,14 @@ final class JournalStoreTests: XCTestCase {
     }
 
     func testHashSeparatesTextAndPhotoBoundaries() {
-        let textOnly = JournalStore.hash(text: "abc", photoData: nil)
-        let splitAcrossPhoto = JournalStore.hash(text: "ab", photoData: Data("c".utf8))
-        XCTAssertNotEqual(textOnly, splitAcrossPhoto)
+        // Both entries carry a photo (so the hasPhoto marker byte is identical
+        // for both) and their text+photo bytes concatenate to the same "abcd" —
+        // only the split point between text and photo differs. Without the
+        // length-prefixing in JournalStore.hash, these would collide; this is
+        // the actual boundary-collision case that prefixing exists to prevent.
+        let splitEarly = JournalStore.hash(text: "ab", photoData: Data("cd".utf8))
+        let splitLate = JournalStore.hash(text: "abc", photoData: Data("d".utf8))
+        XCTAssertNotEqual(splitEarly, splitLate, "differing only in where text ends and photo begins must still change the hash")
     }
 
     func testVerifyDetectsIntactEntry() {
